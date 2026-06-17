@@ -104,19 +104,57 @@
     <!-- Members -->
     <div class="tab-content" id="tab-members">
       <div class="section-title">จัดการสมาชิก</div>
-      <div class="search-box">
-        <input type="text" id="admin-search" placeholder="ค้นหาชื่อ / เลขที่..." />
+      <div class="search-box" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
+        <input type="text" id="admin-search" placeholder="ค้นหาชื่อ / นามสกุล" style="flex:2 1 160px;padding:0.5rem 0.8rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit" />
+        <select id="admin-s-type" style="flex:1 1 120px;padding:0.5rem 0.7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
+          <option value="">ทุกประเภท</option>
+          <option value="สามัญ">สามัญ</option>
+          <option value="สมทบ">สมทบ</option>
+        </select>
         <button class="btn btn-primary btn-sm" onclick="adminSearchMembers(1)">ค้นหา</button>
       </div>
-      <div class="table-wrap">
+      <div id="admin-result-count" style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem"></div>
+      <div class="table-wrap" style="overflow-y:auto;max-height:60vh">
         <table>
           <thead>
-            <tr><th>เลขที่</th><th>ยศ ชื่อ นามสกุล</th><th>รุ่น</th><th>ประเภท</th><th>สถานะ</th><th>เบอร์โทร</th><th>แก้ไข</th></tr>
+            <tr><th>ลำดับ</th><th>รุ่น</th><th>ยศ ชื่อ นามสกุล</th><th>ประเภท</th><th>สถานปฏิบัติงาน</th><th>สถาบัน</th><th>เบอร์โทร</th><th>สถานะ</th><th>จัดการ</th></tr>
           </thead>
-          <tbody id="admin-member-tbody"><tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr></tbody>
+          <tbody id="admin-member-tbody"><tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr></tbody>
         </table>
       </div>
       <div id="admin-pagination"></div>
+    </div>
+
+    <!-- Modal: Edit Member -->
+    <div class="modal-overlay" id="edit-member-modal">
+      <div class="modal" style="max-width:560px">
+        <h3>แก้ไขข้อมูลสมาชิก</h3>
+        <input type="hidden" id="em-id" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ยศ</label><input type="text" id="em-rank" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">รุ่น</label><input type="text" id="em-gen" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ชื่อ</label><input type="text" id="em-fname" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">นามสกุล</label><input type="text" id="em-lname" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ประเภท</label>
+            <select id="em-type" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box">
+              <option value="สามัญ">สามัญ</option><option value="สมทบ">สมทบ</option><option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
+            </select>
+          </div>
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">สถานะ</label>
+            <select id="em-status" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box">
+              <option value="มีชีวิต">มีชีวิต</option><option value="เสียชีวิต">เสียชีวิต</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1"><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">สถานปฏิบัติงาน</label><input type="text" id="em-workplace" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">สถาบัน</label><input type="text" id="em-inst" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
+          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">เบอร์โทร</label><input type="text" id="em-phone" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
+          <div style="grid-column:1/-1"><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ที่อยู่</label><textarea id="em-addr" rows="2" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-sm" onclick="closeModal('edit-member-modal')" style="background:#eee">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" onclick="saveMemberEdit()">บันทึก</button>
+        </div>
+      </div>
     </div>
 
     <!-- Logbook -->
@@ -307,36 +345,102 @@ async function rejectMember(id) {
 
 // Admin Members
 let adminPage = 1;
+let _adminMemberCache = [];
+
 async function adminSearchMembers(page) {
   adminPage = page;
   const query = document.getElementById('admin-search').value.trim();
+  const type  = document.getElementById('admin-s-type').value;
   const tbody = document.getElementById('admin-member-tbody');
-  tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr>';
   try {
-    const data = await API.searchMembers(query, '', '', page);
-    if (!data.members?.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูล</td></tr>';
+    const data = await API.searchMembers(query, '', type, page, 100);
+    _adminMemberCache = data.members || [];
+    document.getElementById('admin-result-count').textContent =
+      `พบ ${(data.total || 0).toLocaleString()} รายการ`;
+    if (!_adminMemberCache.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูล</td></tr>';
       return;
     }
-    tbody.innerHTML = data.members.map(m => `
-      <tr>
-        <td><span class="badge badge-blue">${escHtml(m.member_id)}</span></td>
-        <td>${escHtml(m.rank)} ${escHtml(m.firstname)} ${escHtml(m.lastname)}</td>
-        <td>${m.generation ? 'รุ่นที่ ' + m.generation : '-'}</td>
-        <td>${escHtml(m.type)||'-'}</td>
-        <td><span class="badge ${m.status==='มีชีวิต'?'badge-green':'badge-red'}">${escHtml(m.status)}</span></td>
-        <td>${escHtml(m.phone)||'-'}</td>
-        <td><button class="btn btn-sm btn-danger" onclick="deleteMember('${escHtml(m.member_id)}')">ลบ</button></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = _adminMemberCache.map((m, i) => {
+      const statCls = m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red';
+      return `<tr>
+        <td style="text-align:center">${escHtml(String(m.row_num || i+1))}</td>
+        <td style="text-align:center">${escHtml(String(m.gen || '-'))}</td>
+        <td>${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}</td>
+        <td>${escHtml(m.type||'-')}</td>
+        <td>${escHtml(m.workplace||'-')}</td>
+        <td>${escHtml(m.institution||'-')}</td>
+        <td>${escHtml(m.phone||'-')}</td>
+        <td><span class="badge ${statCls}">${escHtml(m.status||'-')}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm" style="background:#3b82f6;color:#fff;margin-right:4px" onclick="openMemberEdit(${i})">✏️ แก้ไข</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteMember('${escHtml(String(m.id||''))}','${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}')">🗑️ ลบ</button>
+        </td>
+      </tr>`;
+    }).join('');
     renderPagination('admin-pagination', data.total, page, 'adminSearchMembers');
-  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:#dc2626;text-align:center;padding:1rem">ยังไม่ได้เชื่อมต่อ API</td></tr>'; }
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="9" style="color:#dc2626;text-align:center;padding:1rem">ยังไม่ได้เชื่อมต่อ API</td></tr>';
+  }
 }
 
-async function deleteMember(id) {
-  if (!confirm(`ยืนยันลบสมาชิก ${id}?`)) return;
+// live search while typing
+let _memberSearchTimer = null;
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('admin-search');
+  if (inp) inp.addEventListener('input', () => {
+    clearTimeout(_memberSearchTimer);
+    _memberSearchTimer = setTimeout(() => adminSearchMembers(1), 400);
+  });
+});
+
+function openMemberEdit(idx) {
+  const m = _adminMemberCache[idx];
+  if (!m) return;
+  document.getElementById('em-id').value       = m.id || '';
+  document.getElementById('em-rank').value     = m.rank || '';
+  document.getElementById('em-fname').value    = m.fname || '';
+  document.getElementById('em-lname').value    = m.lname || '';
+  document.getElementById('em-gen').value      = m.gen || '';
+  document.getElementById('em-type').value     = m.type || 'สามัญ';
+  document.getElementById('em-status').value   = m.status || 'มีชีวิต';
+  document.getElementById('em-workplace').value= m.workplace || '';
+  document.getElementById('em-inst').value     = m.institution || '';
+  document.getElementById('em-phone').value    = m.phone || '';
+  document.getElementById('em-addr').value     = m.address || '';
+  document.getElementById('edit-member-modal').classList.add('open');
+}
+
+async function saveMemberEdit() {
+  const id = document.getElementById('em-id').value;
+  if (!id) return;
+  const email = JSON.parse(sessionStorage.getItem('adminUser')||'{}').email || '';
   try {
-    await API.deleteMember(id);
+    await API.updateMember({
+      email, id,
+      rank:        document.getElementById('em-rank').value,
+      fname:       document.getElementById('em-fname').value,
+      lname:       document.getElementById('em-lname').value,
+      gen:         document.getElementById('em-gen').value,
+      type:        document.getElementById('em-type').value,
+      status:      document.getElementById('em-status').value,
+      workplace:   document.getElementById('em-workplace').value,
+      institution: document.getElementById('em-inst').value,
+      phone:       document.getElementById('em-phone').value,
+      address:     document.getElementById('em-addr').value,
+    });
+    closeModal('edit-member-modal');
+    showToast('บันทึกสำเร็จ', 'success');
+    adminSearchMembers(adminPage);
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+async function deleteMember(id, name) {
+  if (!confirm(`ยืนยันลบสมาชิก "${name}"?`)) return;
+  const email = JSON.parse(sessionStorage.getItem('adminUser')||'{}').email || '';
+  try {
+    await apiPost({ action: 'deleteMember', id, email });
     showToast('ลบเรียบร้อยแล้ว', 'success');
     adminSearchMembers(adminPage);
   } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }

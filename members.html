@@ -221,67 +221,6 @@
 
 </div>
 
-<!-- Edit Modal -->
-<div class="modal-overlay" id="edit-modal">
-  <div class="modal-box">
-    <h3>แก้ไขข้อมูลสมาชิก</h3>
-    <input type="hidden" id="edit-id" />
-    <div class="modal-grid">
-      <div>
-        <label>ยศ</label>
-        <input type="text" id="edit-rank" />
-      </div>
-      <div>
-        <label>ชื่อ</label>
-        <input type="text" id="edit-fname" />
-      </div>
-      <div>
-        <label>นามสกุล</label>
-        <input type="text" id="edit-lname" />
-      </div>
-      <div>
-        <label>รุ่น</label>
-        <input type="text" id="edit-gen" />
-      </div>
-      <div>
-        <label>ประเภท</label>
-        <select id="edit-type">
-          <option value="สามัญ">สามัญ</option>
-          <option value="สมทบ">สมทบ</option>
-          <option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
-        </select>
-      </div>
-      <div>
-        <label>สถานะ</label>
-        <select id="edit-status">
-          <option value="มีชีวิต">มีชีวิต</option>
-          <option value="เสียชีวิต">เสียชีวิต</option>
-        </select>
-      </div>
-      <div class="full">
-        <label>สถานปฏิบัติงาน</label>
-        <input type="text" id="edit-workplace" />
-      </div>
-      <div>
-        <label>สถาบัน</label>
-        <input type="text" id="edit-inst" />
-      </div>
-      <div>
-        <label>เบอร์โทร</label>
-        <input type="text" id="edit-phone" />
-      </div>
-      <div class="full">
-        <label>ที่อยู่</label>
-        <textarea id="edit-addr" rows="2" style="resize:vertical"></textarea>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()" style="background:#f3f4f6;color:#444">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="saveEdit()">บันทึก</button>
-    </div>
-  </div>
-</div>
-
 <footer>
   <p>ชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.) &nbsp;|&nbsp; nurse.rtafnc@gmail.com</p>
 </footer>
@@ -292,94 +231,38 @@
 <script src="js/ui.js"></script>
 <script src="js/api.js"></script>
 <script>
-// ── Auth ──────────────────────────────────────────────
-let isAdmin = false;
-let adminEmail = null;
-
-// ตรวจ sessionStorage จาก admin panel
-const sess = sessionStorage.getItem('adminUser');
-if (sess) {
-  try {
-    const u = JSON.parse(sess);
-    if (CONFIG.ADMIN_EMAILS.indexOf(u.email) >= 0) {
-      isAdmin = true;
-      adminEmail = u.email;
-    }
-  } catch(e) {}
-}
-
 // ── Build table header ─────────────────────────────────
 function buildHeader() {
-  const head = document.getElementById('tbl-head');
-  if (isAdmin) {
-    head.innerHTML = `<tr>
-      <th class="col-no">ลำดับ</th>
-      <th>ยศ ชื่อ นามสกุล</th>
-      <th class="col-gen">รุ่น</th>
-      <th class="col-type">ประเภท</th>
-      <th>สถานปฏิบัติงาน</th>
-      <th>สถาบัน</th>
-      <th>เบอร์โทร</th>
-      <th class="col-stat">สถานะ</th>
-      <th class="col-act">จัดการ</th>
-    </tr>`;
-    document.getElementById('admin-label').innerHTML = '<span class="admin-badge">ADMIN MODE</span>';
-  } else {
-    head.innerHTML = `<tr>
-      <th class="col-no">ลำดับ</th>
-      <th class="col-gen">รุ่น</th>
-      <th class="col-name">ยศ ชื่อ นามสกุล</th>
-      <th class="col-type">ประเภท</th>
-      <th class="col-stat">สถานะ</th>
-    </tr>`;
-  }
+  document.getElementById('tbl-head').innerHTML = `<tr>
+    <th class="col-no">ลำดับ</th>
+    <th class="col-gen">รุ่น</th>
+    <th class="col-name">ยศ ชื่อ นามสกุล</th>
+    <th class="col-type">ประเภท</th>
+    <th class="col-stat">สถานะ</th>
+  </tr>`;
 }
 
 // ── Render rows ────────────────────────────────────────
 function renderRows(members) {
   const tbody = document.getElementById('member-tbody');
   if (!members || members.length === 0) {
-    const cols = isAdmin ? 9 : 5;
-    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูลสมาชิก</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูลสมาชิก</td></tr>`;
     return;
   }
-
   tbody.innerHTML = members.map((m, i) => {
-    const no     = escHtml(String(m.row_num || (i+1)));
-    const name   = escHtml([m.rank, m.fname, m.lname].filter(Boolean).join(' '));
-    const gen    = escHtml(String(m.gen || '-'));
-    const type   = escHtml(m.type || '-');
-    const inst   = escHtml(m.institution || '-');
-    const work   = escHtml(m.workplace || '-');
-    const phone  = escHtml(m.phone || '-');
+    const no      = escHtml(String(m.row_num || (i+1)));
+    const name    = escHtml([m.rank, m.fname, m.lname].filter(Boolean).join(' '));
+    const gen     = escHtml(String(m.gen || '-'));
+    const type    = escHtml(m.type || '-');
     const statCls = m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red';
-    const stat   = `<span class="badge ${statCls}">${escHtml(m.status || '-')}</span>`;
-    const membId = escHtml(String(m.id || ''));
-
-    if (isAdmin) {
-      return `<tr>
-        <td class="col-no">${no}</td>
-        <td class="col-name">${name}</td>
-        <td class="col-gen" style="text-align:center">${gen}</td>
-        <td>${type}</td>
-        <td>${work}</td>
-        <td>${inst}</td>
-        <td>${phone}</td>
-        <td>${stat}</td>
-        <td class="col-act">
-          <button class="btn-edit" onclick="openEdit(${JSON.stringify(m)})">แก้ไข</button>
-          <button class="btn-del" onclick="delMember('${membId}','${name}')">ลบ</button>
-        </td>
-      </tr>`;
-    } else {
-      return `<tr>
-        <td class="col-no">${no}</td>
-        <td class="col-gen" style="text-align:center">${gen}</td>
-        <td class="col-name">${name}</td>
-        <td>${type}</td>
-        <td>${stat}</td>
-      </tr>`;
-    }
+    const stat    = `<span class="badge ${statCls}">${escHtml(m.status || '-')}</span>`;
+    return `<tr>
+      <td class="col-no">${no}</td>
+      <td class="col-gen" style="text-align:center">${gen}</td>
+      <td class="col-name">${name}</td>
+      <td>${type}</td>
+      <td>${stat}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -388,9 +271,8 @@ async function doSearch() {
   const query = document.getElementById('s-name').value.trim();
   const gen   = document.getElementById('s-gen').value;
   const type  = document.getElementById('s-type').value;
-  const cols  = isAdmin ? 9 : 5;
   const tbody = document.getElementById('member-tbody');
-  tbody.innerHTML = `<tr><td colspan="${cols}" class="loading"><div class="spinner"></div></td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="5" class="loading"><div class="spinner"></div></td></tr>`;
 
   try {
     const data = await API.searchMembers(query, gen, type, 1, 100);
@@ -398,7 +280,7 @@ async function doSearch() {
       `พบ ${(data.total || 0).toLocaleString()} รายการ`;
     renderRows(data.members);
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:2rem;color:#dc2626">
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:#dc2626">
       ⚠️ ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน</td></tr>`;
   }
 }
@@ -414,68 +296,6 @@ async function loadGenerations() {
     }
   } catch(e) {}
 }
-
-// ── Edit modal ─────────────────────────────────────────
-function openEdit(m) {
-  document.getElementById('edit-id').value       = m.id || '';
-  document.getElementById('edit-rank').value     = m.rank || '';
-  document.getElementById('edit-fname').value    = m.fname || '';
-  document.getElementById('edit-lname').value    = m.lname || '';
-  document.getElementById('edit-gen').value      = m.gen || '';
-  document.getElementById('edit-type').value     = m.type || 'สามัญ';
-  document.getElementById('edit-status').value   = m.status || 'มีชีวิต';
-  document.getElementById('edit-workplace').value= m.workplace || '';
-  document.getElementById('edit-inst').value     = m.institution || '';
-  document.getElementById('edit-phone').value    = m.phone || '';
-  document.getElementById('edit-addr').value     = m.address || '';
-  document.getElementById('edit-modal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('edit-modal').classList.remove('open');
-}
-
-async function saveEdit() {
-  const id = document.getElementById('edit-id').value;
-  if (!id) return;
-  try {
-    await API.updateMember({
-      email:       adminEmail,
-      id:          id,
-      rank:        document.getElementById('edit-rank').value,
-      fname:       document.getElementById('edit-fname').value,
-      lname:       document.getElementById('edit-lname').value,
-      gen:         document.getElementById('edit-gen').value,
-      type:        document.getElementById('edit-type').value,
-      status:      document.getElementById('edit-status').value,
-      workplace:   document.getElementById('edit-workplace').value,
-      institution: document.getElementById('edit-inst').value,
-      phone:       document.getElementById('edit-phone').value,
-      address:     document.getElementById('edit-addr').value,
-    });
-    closeModal();
-    showToast('บันทึกสำเร็จ', 'success');
-    doSearch();
-  } catch(e) {
-    showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
-  }
-}
-
-async function delMember(id, name) {
-  if (!confirm(`ลบสมาชิก "${name}" ใช่หรือไม่?`)) return;
-  try {
-    await API.deleteMember(id);
-    showToast('ลบสำเร็จ', 'success');
-    doSearch();
-  } catch(e) {
-    showToast('เกิดข้อผิดพลาด', 'error');
-  }
-}
-
-// Close modal on overlay click
-document.getElementById('edit-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
 
 // Search while typing (debounced 400ms)
 let _searchTimer = null;
