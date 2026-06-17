@@ -4,7 +4,7 @@ const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbyHikJ4GXR4ub5Hx9olxoqdkYQg3d7TYjczsGUrN3SFFNHgz7NwOwtraGThqok5Rh9X/exec',
 
   // Google OAuth Client ID (สร้างที่ Google Cloud Console)
-  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: '894799186085-mrn3jfvp4n31clvoc13qk7boicvdlikr.apps.googleusercontent.com',
 
   // Admins ที่อนุญาต (Google email)
   ADMIN_EMAILS: [
