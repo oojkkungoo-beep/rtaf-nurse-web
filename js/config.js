@@ -1,7 +1,7 @@
 // ตั้งค่าหลัก — แก้ค่าเหล่านี้หลัง deploy Apps Script
 const CONFIG = {
   // URL ของ Google Apps Script Web App (ใส่หลัง deploy)
-  API_URL: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyHikJ4GXR4ub5Hx9olxoqdkYQg3d7TYjczsGUrN3SFFNHgz7NwOwtraGThqok5Rh9X/exec',
 
   // Google OAuth Client ID (สร้างที่ Google Cloud Console)
   GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
