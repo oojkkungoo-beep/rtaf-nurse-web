@@ -28,7 +28,7 @@
 </nav>
 
 <div class="hero">
-  <img src="images/logo.png" alt="Logo ชศพอ." style="height:90px;margin-bottom:1rem;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4))" />
+  <img src="images/logo.png" alt="Logo ชศพอ." style="height:180px;margin-bottom:1rem;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4))" />
   <h1>ชุมนุมศิษย์พยาบาลทหารอากาศ</h1>
   <p>Royal Thai Air Force Nurse Alumni Association</p>
 </div>
@@ -39,12 +39,24 @@
   <div class="stat-item"><div class="stat-num" id="stat-gen">—</div><div class="stat-label">จำนวนรุ่น</div></div>
 </div>
 
-<!-- Section: ผู้ก่อตั้ง -->
+<!-- Section: ข่าวประชาสัมพันธ์ -->
 <div class="section" style="max-width:900px">
-  <div style="display:flex;gap:2rem;align-items:center;background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.08);overflow:hidden;flex-wrap:wrap">
-    <img src="images/founder.jpg" alt="คุณพ่อเฉลิมเกียรติ วัฒนางกูล"
-      style="width:280px;object-fit:cover;flex-shrink:0;max-height:320px" />
-    <div style="padding:1.5rem;flex:1;min-width:240px">
+  <div class="section-title">ข่าวประชาสัมพันธ์</div>
+  <div id="news-top" style="display:flex;flex-direction:column;gap:0.75rem"></div>
+  <!-- ข่าวที่ 6+ ใน scroll box -->
+  <div id="news-more-wrap" style="display:none;margin-top:0.75rem;max-height:340px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;padding:0.5rem 0">
+    <div id="news-more" style="display:flex;flex-direction:column;gap:0"></div>
+  </div>
+  <div id="news-loading" class="loading"><div class="spinner"></div></div>
+  <p id="news-empty" style="display:none;color:var(--text-muted);padding:1rem">ยังไม่มีข่าวประชาสัมพันธ์</p>
+</div>
+
+<!-- Section: ผู้ก่อตั้ง -->
+<div class="section" style="max-width:700px">
+  <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.08);overflow:hidden;text-align:center">
+    <img src="images/founder.jpg" alt="จอมพลอากาศ เฉลิมเกียรติ วัฒนางกูร"
+      style="width:100%;max-height:360px;object-fit:cover;object-position:top" />
+    <div style="padding:1.5rem 2rem 2rem">
       <div style="color:var(--gold);font-size:0.8rem;font-weight:700;letter-spacing:1px;margin-bottom:0.5rem">ผู้ก่อตั้งวิทยาลัยพยาบาลทหารอากาศ</div>
       <h2 style="color:var(--navy);font-size:1.4rem;margin-bottom:0.75rem">จอมพลอากาศ เฉลิมเกียรติ วัฒนางกูร</h2>
       <p style="color:var(--text-muted);line-height:1.8;font-size:0.95rem">
@@ -76,13 +88,6 @@
   </div>
 </div>
 
-<div class="section">
-  <div class="section-title">ข่าวประชาสัมพันธ์</div>
-  <div class="news-grid" id="news-grid">
-    <div class="loading"><div class="spinner"></div></div>
-  </div>
-</div>
-
 <footer>
   <p>ชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.) &nbsp;|&nbsp; nurse.rtafnc@gmail.com</p>
   <p style="margin-top:0.3rem">© 2024 สงวนลิขสิทธิ์</p>
@@ -101,26 +106,38 @@ async function loadStats() {
   } catch(e) { /* ถ้า API ยังไม่ setup ไม่ error */ }
 }
 
+function newsCardHtml(n) {
+  return `<div class="news-card">
+    <div class="news-card-header">${escHtml(formatDate(n.date))} &nbsp;|&nbsp; ${escHtml(n.category || 'ทั่วไป')}</div>
+    <div class="news-card-body"><h3>${escHtml(n.title)}</h3><p>${escHtml(n.summary)}</p></div>
+  </div>`;
+}
+
 async function loadNews() {
+  const loading = document.getElementById('news-loading');
+  const empty   = document.getElementById('news-empty');
+  const topEl   = document.getElementById('news-top');
+  const moreWrap= document.getElementById('news-more-wrap');
+  const moreEl  = document.getElementById('news-more');
   try {
     const data = await API.getNews();
-    const grid = document.getElementById('news-grid');
-    if (!data.news || data.news.length === 0) {
-      grid.innerHTML = '<p style="color:var(--text-muted);padding:1rem">ยังไม่มีข่าวประชาสัมพันธ์</p>';
-      return;
+    loading.style.display = 'none';
+    if (!data.news || data.news.length === 0) { empty.style.display = ''; return; }
+    const top5 = data.news.slice(0, 5);
+    const rest  = data.news.slice(5);
+    topEl.innerHTML = top5.map(newsCardHtml).join('');
+    if (rest.length > 0) {
+      moreEl.innerHTML = rest.map(n => `
+        <div style="padding:0.75rem 1rem;border-bottom:1px solid #f0f4f8">
+          <div style="font-size:0.75rem;color:var(--gold);font-weight:600;margin-bottom:0.2rem">${escHtml(formatDate(n.date))} | ${escHtml(n.category||'ทั่วไป')}</div>
+          <div style="font-weight:600;color:var(--navy);font-size:0.9rem">${escHtml(n.title)}</div>
+          <div style="color:var(--text-muted);font-size:0.82rem;margin-top:0.2rem">${escHtml(n.summary)}</div>
+        </div>`).join('');
+      moreWrap.style.display = '';
     }
-    grid.innerHTML = data.news.map(n => `
-      <div class="news-card">
-        <div class="news-card-header">${escHtml(formatDate(n.date))} &nbsp;|&nbsp; ${escHtml(n.category || 'ทั่วไป')}</div>
-        <div class="news-card-body">
-          <h3>${escHtml(n.title)}</h3>
-          <p>${escHtml(n.summary)}</p>
-        </div>
-      </div>
-    `).join('');
   } catch(e) {
-    document.getElementById('news-grid').innerHTML =
-      '<p style="color:var(--text-muted);padding:1rem">⚠️ ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน</p>';
+    loading.style.display = 'none';
+    topEl.innerHTML = '<p style="color:var(--text-muted);padding:0.5rem">⚠️ ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน</p>';
   }
 }
 
