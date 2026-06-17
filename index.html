@@ -42,13 +42,24 @@
 <!-- Section: ข่าวประชาสัมพันธ์ -->
 <div class="section" style="max-width:900px">
   <div class="section-title">ข่าวประชาสัมพันธ์</div>
-  <div id="news-top" style="display:flex;flex-direction:column;gap:0.75rem"></div>
-  <!-- ข่าวที่ 6+ ใน scroll box -->
-  <div id="news-more-wrap" style="display:none;margin-top:0.75rem;max-height:340px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;padding:0.5rem 0">
-    <div id="news-more" style="display:flex;flex-direction:column;gap:0"></div>
-  </div>
   <div id="news-loading" class="loading"><div class="spinner"></div></div>
   <p id="news-empty" style="display:none;color:var(--text-muted);padding:1rem">ยังไม่มีข่าวประชาสัมพันธ์</p>
+  <div id="news-scroll-wrap" style="display:none;max-height:420px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+    <div id="news-list"></div>
+  </div>
+</div>
+
+<!-- News Detail Modal -->
+<div id="news-detail-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center">
+  <div id="news-detail-box" style="background:#fff;border-radius:16px;padding:1.75rem;width:min(95vw,580px);max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+    <div id="nd-meta" style="font-size:0.78rem;color:var(--gold);font-weight:600;margin-bottom:0.5rem"></div>
+    <h2 id="nd-title" style="color:var(--navy);font-size:1.2rem;margin-bottom:0.75rem;line-height:1.5"></h2>
+    <p id="nd-summary" style="color:#475569;line-height:1.8;margin-bottom:0.75rem;font-size:0.95rem"></p>
+    <div id="nd-content" style="color:#334155;line-height:1.9;font-size:0.92rem;white-space:pre-wrap"></div>
+    <div style="margin-top:1.5rem;text-align:right">
+      <button onclick="closeDetail()" style="padding:8px 24px;background:var(--navy);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.9rem">ปิด</button>
+    </div>
+  </div>
 </div>
 
 <!-- Section: ผู้ก่อตั้ง -->
@@ -111,62 +122,69 @@ async function loadStats() {
   } catch(e) {}
 }
 
-// --- News (read-only, all users) ---
-function newsCardHtml(n) {
-  return `<div class="news-card">
-    <div class="news-card-header">
-      ${escHtml(formatDate(n.date))} &nbsp;|&nbsp; ${escHtml(n.category || 'ทั่วไป')}
-      ${n.pinned ? '<span class="news-pinned-badge">📌 ปักหมุด</span>' : ''}
-    </div>
-    <div class="news-card-body"><h3>${escHtml(n.title)}</h3><p>${escHtml(n.summary)}</p></div>
-  </div>`;
-}
+// --- News ---
+let _newsCache = [];
 
-function newsRowHtml(n) {
-  return `<div style="padding:0.75rem 1rem;border-bottom:1px solid #f0f4f8">
-    <div style="font-size:0.75rem;color:var(--gold);font-weight:600;margin-bottom:.2rem">
-      ${escHtml(formatDate(n.date))} | ${escHtml(n.category||'ทั่วไป')}
-      ${n.pinned?'<span class="news-pinned-badge">📌</span>':''}
+function newsRowHtml(n, idx) {
+  return `<div onclick="openDetail(${idx})" style="padding:0.85rem 1.1rem;border-bottom:1px solid #f0f4f8;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#f8faff'" onmouseout="this.style.background=''">
+    <div style="font-size:0.75rem;color:var(--gold);font-weight:600;margin-bottom:.25rem">
+      ${escHtml(formatDate(n.date))} &nbsp;|&nbsp; ${escHtml(n.category||'ทั่วไป')}
+      ${n.pinned?'<span class="news-pinned-badge">📌 ปักหมุด</span>':''}
     </div>
-    <div style="font-weight:600;color:var(--navy);font-size:.9rem">${escHtml(n.title)}</div>
-    <div style="color:var(--text-muted);font-size:.82rem;margin-top:.2rem">${escHtml(n.summary)}</div>
+    <div style="font-weight:600;color:var(--navy);font-size:.95rem;margin-bottom:.2rem">${escHtml(n.title)}</div>
+    <div style="color:var(--text-muted);font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(n.summary)}</div>
   </div>`;
 }
 
 function renderNews(news) {
-  const loading  = document.getElementById('news-loading');
-  const empty    = document.getElementById('news-empty');
-  const topEl    = document.getElementById('news-top');
-  const moreWrap = document.getElementById('news-more-wrap');
-  const moreEl   = document.getElementById('news-more');
+  const loading   = document.getElementById('news-loading');
+  const empty     = document.getElementById('news-empty');
+  const wrap      = document.getElementById('news-scroll-wrap');
+  const listEl    = document.getElementById('news-list');
 
   loading.style.display = 'none';
-  topEl.innerHTML = '';
-  moreWrap.style.display = 'none';
-  moreEl.innerHTML = '';
 
-  if (!news || news.length === 0) { empty.style.display = ''; return; }
+  if (!news || news.length === 0) { empty.style.display = ''; wrap.style.display = 'none'; return; }
   empty.style.display = 'none';
 
-  topEl.innerHTML = news.slice(0, 5).map(newsCardHtml).join('');
-
-  const rest = news.slice(5);
-  if (rest.length > 0) {
-    moreEl.innerHTML = rest.map(newsRowHtml).join('');
-    moreWrap.style.display = '';
-  }
+  listEl.innerHTML = news.map((n, i) => newsRowHtml(n, i)).join('');
+  wrap.style.display = '';
 }
 
 async function loadNews() {
   try {
     const data = await API.getNews();
-    renderNews(data.news || []);
+    _newsCache = data.news || [];
+    renderNews(_newsCache);
   } catch(e) {
     document.getElementById('news-loading').style.display = 'none';
-    document.getElementById('news-top').innerHTML =
-      '<p style="color:var(--text-muted);padding:.5rem">⚠️ ยังไม่ได้เชื่อมต่อ API</p>';
+    document.getElementById('news-list').innerHTML =
+      '<p style="color:var(--text-muted);padding:1rem">⚠️ ยังไม่ได้เชื่อมต่อ API</p>';
+    document.getElementById('news-scroll-wrap').style.display = '';
   }
 }
+
+// --- News Detail Modal ---
+function openDetail(idx) {
+  const n = _newsCache[idx];
+  if (!n) return;
+  document.getElementById('nd-meta').textContent = `${formatDate(n.date)}  |  ${n.category||'ทั่วไป'}`;
+  document.getElementById('nd-title').textContent = n.title || '';
+  document.getElementById('nd-summary').textContent = n.summary || '';
+  const contentEl = document.getElementById('nd-content');
+  contentEl.textContent = n.content || '';
+  contentEl.style.display = n.content ? '' : 'none';
+  const bg = document.getElementById('news-detail-bg');
+  bg.style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('news-detail-bg').style.display = 'none';
+}
+
+document.getElementById('news-detail-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
 
 loadStats();
 loadNews();
