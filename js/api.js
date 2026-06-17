@@ -22,6 +22,7 @@ const API = {
   getNews: () => apiGet({ action: 'getNews' }),
 
   getStats: () => apiGet({ action: 'getStats' }),
+  getFilterOptions: () => apiGet({ action: 'getFilterOptions' }),
 
   searchMembers: (query = '', gen = '', type = '', page = 1) =>
     apiGet({ action: 'searchMembers', query, gen, type, page, limit: CONFIG.ITEMS_PER_PAGE }),

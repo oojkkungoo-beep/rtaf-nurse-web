@@ -34,6 +34,9 @@ function doGet(e) {
       case 'getStats':
         result = getStats();
         break;
+      case 'getFilterOptions':
+        result = getFilterOptions();
+        break;
       case 'getNews':
         result = getNews();
         break;
@@ -101,6 +104,18 @@ function doPost(e) {
       case 'addLogbook':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = addLogbook(data);
+        break;
+      case 'pinNews':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = pinNews(data);
+        break;
+      case 'reorderNews':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = reorderNews(data);
+        break;
+      case 'seedNews':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = seedNews();
         break;
       default:
         result = { error: 'Unknown action: ' + action };
@@ -181,17 +196,48 @@ function getStats() {
   return { total: total, active: active, generations: generations };
 }
 
+function getFilterOptions() {
+  const sheet = getSheet(MEMBERS_SHEET);
+  const rows = sheet.getDataRange().getValues().slice(1).filter(isMemberRow);
+  const genSet = {}, typeSet = {};
+  rows.forEach(function(r) {
+    const g = String(r[COL.GEN]).trim();
+    const t = String(r[COL.TYPE]).trim();
+    if (g) genSet[g] = true;
+    if (t) typeSet[t] = true;
+  });
+  const gens = Object.keys(genSet)
+    .map(Number).filter(function(n) { return !isNaN(n) && n > 0; })
+    .sort(function(a,b) { return a-b; })
+    .map(String);
+  const types = Object.keys(typeSet).sort();
+  return { generations: gens, types: types };
+}
+
+// News columns: id(0) date(1) category(2) title(3) summary(4) content(5) pinned(6) sort_order(7)
+var NEWS_HDR = ['id', 'date', 'category', 'title', 'summary', 'content', 'pinned', 'sort_order'];
+
 function getNews() {
-  const sheet = getOrCreateSheet(NEWS_SHEET, ['id', 'date', 'category', 'title', 'summary', 'content']);
+  const sheet = getOrCreateSheet(NEWS_SHEET, NEWS_HDR);
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { news: [] };
 
   const news = data.slice(1)
     .filter(function(r) { return r[0]; })
-    .map(function(r) {
-      return { id: r[0], date: r[1], category: r[2], title: r[3], summary: r[4], content: r[5] };
-    })
-    .reverse();
+    .map(function(r, i) {
+      return {
+        id: r[0], date: r[1], category: r[2], title: r[3],
+        summary: r[4], content: r[5],
+        pinned: r[6] === true || r[6] === 'TRUE' || r[6] === 1,
+        sort_order: parseInt(r[7], 10) || i,
+      };
+    });
+
+  // ปักหมุดขึ้นก่อน, เรียงตาม sort_order, แล้วที่เหลือตาม sort_order
+  news.sort(function(a, b) {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return a.sort_order - b.sort_order;
+  });
 
   return { news: news };
 }
@@ -275,17 +321,24 @@ function getPending() {
 
 // ---- Admin: News ----
 
+function _getNewsSheet() { return getOrCreateSheet(NEWS_SHEET, NEWS_HDR); }
+
+function _newsMaxOrder(rows) {
+  return rows.slice(1).reduce(function(m, r) { return Math.max(m, parseInt(r[7], 10) || 0); }, 0);
+}
+
 function addNews(data) {
-  const sheet = getOrCreateSheet(NEWS_SHEET, ['id', 'date', 'category', 'title', 'summary', 'content']);
+  const sheet = _getNewsSheet();
+  const rows = sheet.getDataRange().getValues();
   const id = 'news_' + Date.now();
   const date = data.date || new Date().toISOString().split('T')[0];
-  sheet.appendRow([id, date, data.category || 'ทั่วไป', data.title || '', data.summary || '', data.content || '']);
+  const order = _newsMaxOrder(rows) + 1;
+  sheet.appendRow([id, date, data.category || 'ทั่วไป', data.title || '', data.summary || '', data.content || '', false, order]);
   return { success: true, id: id };
 }
 
 function updateNews(data) {
-  const sheet = getSheet(NEWS_SHEET);
-  if (!sheet) return { error: 'ไม่พบ sheet ข่าว' };
+  const sheet = _getNewsSheet();
   const rows = sheet.getDataRange().getValues();
   const idx = rows.findIndex(function(r) { return String(r[0]) === String(data.id); });
   if (idx < 0) return { error: 'ไม่พบข่าว' };
@@ -294,13 +347,70 @@ function updateNews(data) {
 }
 
 function deleteNews(id) {
-  const sheet = getSheet(NEWS_SHEET);
-  if (!sheet) return { error: 'ไม่พบ sheet ข่าว' };
+  const sheet = _getNewsSheet();
   const rows = sheet.getDataRange().getValues();
   const idx = rows.findIndex(function(r) { return String(r[0]) === String(id); });
   if (idx < 0) return { error: 'ไม่พบข่าว' };
   sheet.deleteRow(idx + 1);
   return { success: true };
+}
+
+function pinNews(data) {
+  const sheet = _getNewsSheet();
+  const rows = sheet.getDataRange().getValues();
+  const idx = rows.findIndex(function(r) { return String(r[0]) === String(data.id); });
+  if (idx < 0) return { error: 'ไม่พบข่าว' };
+  const newVal = data.pinned === true || data.pinned === 'true';
+  sheet.getRange(idx + 1, 7).setValue(newVal); // col G = pinned
+  return { success: true, pinned: newVal };
+}
+
+function reorderNews(data) {
+  // data.id, data.direction = 'up' | 'down'
+  const sheet = _getNewsSheet();
+  const rows = sheet.getDataRange().getValues();
+  const dataRows = rows.slice(1).filter(function(r) { return r[0]; });
+
+  // sort by current sort_order
+  dataRows.sort(function(a, b) { return (parseInt(a[7],10)||0) - (parseInt(b[7],10)||0); });
+
+  const pos = dataRows.findIndex(function(r) { return String(r[0]) === String(data.id); });
+  if (pos < 0) return { error: 'ไม่พบข่าว' };
+
+  const swapPos = data.direction === 'up' ? pos - 1 : pos + 1;
+  if (swapPos < 0 || swapPos >= dataRows.length) return { success: true }; // already at edge
+
+  // swap sort_order values
+  const orderA = parseInt(dataRows[pos][7], 10) || pos;
+  const orderB = parseInt(dataRows[swapPos][7], 10) || swapPos;
+
+  // find sheet rows for each
+  function findSheetRow(id) {
+    return rows.findIndex(function(r) { return String(r[0]) === String(id); });
+  }
+  const rA = findSheetRow(dataRows[pos][0]);
+  const rB = findSheetRow(dataRows[swapPos][0]);
+  sheet.getRange(rA + 1, 8).setValue(orderB);
+  sheet.getRange(rB + 1, 8).setValue(orderA);
+  return { success: true };
+}
+
+function seedNews() {
+  const sheet = _getNewsSheet();
+  if (sheet.getLastRow() > 1) return { skipped: true, message: 'มีข่าวอยู่แล้ว' };
+  var items = [
+    ['2026-06-01','ประชาสัมพันธ์','ประชุมใหญ่สามัญประจำปี 2569','ขอเชิญสมาชิกทุกท่านร่วมประชุมใหญ่สามัญ ในวันเสาร์ที่ 20 กรกฎาคม 2569 ณ ห้องประชุมชมรม เวลา 09.00 น.',''],
+    ['2026-05-20','กิจกรรม','กิจกรรมวันพยาบาลสากล 2569','ชมรมจัดกิจกรรมเนื่องในวันพยาบาลสากล 12 พฤษภาคม 2569 มีการบรรยายวิชาการและมอบรางวัลพยาบาลดีเด่น',''],
+    ['2026-05-10','สวัสดิการ','เปิดรับสมัครสมาชิกใหม่รุ่นที่ 78','เปิดรับสมัครสมาชิกสามัญและสมทบ ตั้งแต่บัดนี้จนถึง 30 มิถุนายน 2569 สอบถามเพิ่มเติมได้ที่ nurse.rtafnc@gmail.com',''],
+    ['2026-04-25','ประชาสัมพันธ์','แจ้งเปลี่ยนแปลงที่อยู่ที่ทำการชมรม','ที่ทำการชมรมย้ายไปยังอาคารใหม่ ชั้น 3 อาคารสวัสดิการกองทัพอากาศ มีผลตั้งแต่วันที่ 1 พฤษภาคม 2569',''],
+    ['2026-04-10','วิชาการ','สัมมนาวิชาการ "พยาบาลกับเทคโนโลยี AI"','ขอเชิญร่วมสัมมนาในหัวข้อ "บทบาทพยาบาลในยุค AI" วันศุกร์ที่ 30 พฤษภาคม 2569 ณ ห้องประชุมกองพยาบาล',''],
+    ['2026-03-15','สวัสดิการ','ทุนการศึกษาบุตรสมาชิกประจำปี 2569','เปิดรับสมัครทุนการศึกษาสำหรับบุตรสมาชิก จำนวน 20 ทุน ทุนละ 5,000 บาท ยื่นใบสมัครภายในวันที่ 31 พฤษภาคม 2569',''],
+    ['2026-02-28','กิจกรรม','โครงการจิตอาสาพยาบาลชุมชน ปี 2569','ชมรมจัดโครงการออกหน่วยเคลื่อนที่ให้บริการสุขภาพแก่ชุมชนรอบค่ายทหารอากาศ กำหนดการ 4 ครั้ง ตลอดปี',''],
+  ];
+  items.forEach(function(it, i) {
+    sheet.appendRow(['news_seed_'+(i+1), it[0], it[1], it[2], it[3], it[4], false, i+1]);
+  });
+  return { success: true, inserted: items.length };
 }
 
 // ---- Admin: Members ----

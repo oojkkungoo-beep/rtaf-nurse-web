@@ -285,15 +285,21 @@ async function doSearch() {
   }
 }
 
-// ── Load gen dropdown ──────────────────────────────────
-async function loadGenerations() {
+// ── Load dropdowns from actual data ───────────────────
+async function loadFilterOptions() {
   try {
-    const data = await API.getStats();
-    const sel = document.getElementById('s-gen');
-    const total = data.generations || 65;
-    for (let i = 1; i <= total; i++) {
-      sel.innerHTML += `<option value="${i}">รุ่นที่ ${i}</option>`;
-    }
+    const data = await API.getFilterOptions();
+    const genSel  = document.getElementById('s-gen');
+    const typeSel = document.getElementById('s-type');
+
+    (data.generations || []).forEach(g => {
+      genSel.innerHTML += `<option value="${escHtml(g)}">${escHtml(g)}</option>`;
+    });
+
+    typeSel.innerHTML = '<option value="">ทุกประเภท</option>';
+    (data.types || []).forEach(t => {
+      typeSel.innerHTML += `<option value="${escHtml(t)}">${escHtml(t)}</option>`;
+    });
   } catch(e) {}
 }
 
@@ -310,7 +316,7 @@ document.getElementById('s-name').addEventListener('keydown', e => {
 
 // ── Init ───────────────────────────────────────────────
 buildHeader();
-loadGenerations();
+loadFilterOptions();
 doSearch();
 </script>
 </body>
