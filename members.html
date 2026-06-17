@@ -477,9 +477,15 @@ document.getElementById('edit-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
-// Enter key search
+// Search while typing (debounced 400ms)
+let _searchTimer = null;
+document.getElementById('s-name').addEventListener('input', () => {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(doSearch, 400);
+});
+
 document.getElementById('s-name').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doSearch();
+  if (e.key === 'Enter') { clearTimeout(_searchTimer); doSearch(); }
 });
 
 // ── Init ───────────────────────────────────────────────
