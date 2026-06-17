@@ -145,8 +145,8 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>วันที่</th><th>หมวด</th><th>หัวข้อ</th><th>สรุป</th><th>แก้ไข</th></tr></thead>
-          <tbody id="news-tbody"><tr><td colspan="5" class="loading"><div class="spinner"></div></td></tr></tbody>
+          <thead><tr><th>วันที่</th><th>📌</th><th>หมวด</th><th>หัวข้อ</th><th>สรุป</th><th style="min-width:180px">จัดการ</th></tr></thead>
+          <tbody id="news-tbody"><tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -187,12 +187,13 @@
       <input type="hidden" name="news_id" />
       <div class="form-group"><label>หมวดหมู่</label>
         <select name="category">
-          <option>ทั่วไป</option><option>กิจกรรม</option><option>สวัสดิการ</option><option>ประกาศ</option>
+          <option>ประชาสัมพันธ์</option><option>กิจกรรม</option><option>สวัสดิการ</option><option>วิชาการ</option><option>ทั่วไป</option>
         </select>
       </div>
-      <div class="form-group"><label>หัวข้อข่าว *</label><input type="text" name="title" required /></div>
-      <div class="form-group"><label>สรุปข่าว *</label><textarea name="summary" rows="4" required style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
       <div class="form-group"><label>วันที่</label><input type="date" name="date" /></div>
+      <div class="form-group"><label>หัวข้อข่าว *</label><input type="text" name="title" required /></div>
+      <div class="form-group"><label>สรุปข่าว *</label><textarea name="summary" rows="3" required style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
+      <div class="form-group"><label>เนื้อหาเต็ม (ไม่บังคับ)</label><textarea name="content" rows="4" style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm" onclick="closeModal('news-modal')" style="background:#eee">ยกเลิก</button>
         <button type="submit" class="btn btn-primary btn-sm">บันทึก</button>
@@ -382,50 +383,103 @@ async function submitLogbook(e) {
 }
 
 // News
+let _adminNewsCache = [];
+
 async function loadAdminNews() {
+  const tbody = document.getElementById('news-tbody');
   try {
     const data = await API.getNews();
-    const tbody = document.getElementById('news-tbody');
-    if (!data.news?.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)">ยังไม่มีข่าว</td></tr>';
+    _adminNewsCache = data.news || [];
+    if (!_adminNewsCache.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">ยังไม่มีข่าว</td></tr>';
       return;
     }
-    tbody.innerHTML = data.news.map(n => `
-      <tr>
-        <td>${escHtml(formatDate(n.date))}</td>
+    tbody.innerHTML = _adminNewsCache.map((n, i) => `
+      <tr id="news-row-${escHtml(n.id)}">
+        <td style="white-space:nowrap">${escHtml(formatDate(n.date))}</td>
+        <td style="text-align:center">${n.pinned ? '📌' : ''}</td>
         <td>${escHtml(n.category)}</td>
         <td>${escHtml(n.title)}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(n.summary)}</td>
-        <td>
-          <button class="btn btn-sm btn-danger" onclick="deleteNews('${escHtml(n.id)}')">ลบ</button>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(n.summary)}</td>
+        <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap;padding:6px 8px">
+          <button class="btn btn-sm" style="background:${n.pinned?'#f59e0b':'#fef3c7'};color:${n.pinned?'#fff':'#92400e'};padding:3px 8px"
+            onclick="togglePin('${escHtml(n.id)}',${!n.pinned})" title="${n.pinned?'เลิกปักหมุด':'ปักหมุด'}">📌</button>
+          ${i > 0 ? `<button class="btn btn-sm" style="background:#e0e7ff;color:#3730a3;padding:3px 8px" onclick="moveNews('${escHtml(n.id)}','up')">↑</button>` : ''}
+          ${i < _adminNewsCache.length-1 ? `<button class="btn btn-sm" style="background:#e0e7ff;color:#3730a3;padding:3px 8px" onclick="moveNews('${escHtml(n.id)}','down')">↓</button>` : ''}
+          <button class="btn btn-sm" style="background:#d1fae5;color:#065f46;padding:3px 8px" onclick="openEditNews('${escHtml(n.id)}')">✏️</button>
+          <button class="btn btn-sm btn-danger" style="padding:3px 8px" onclick="deleteNews('${escHtml(n.id)}')">🗑️</button>
         </td>
       </tr>
     `).join('');
-  } catch(e) { document.getElementById('news-tbody').innerHTML = '<tr><td colspan="5" style="color:#dc2626;text-align:center">ยังไม่ได้เชื่อมต่อ API</td></tr>'; }
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:#dc2626;text-align:center">ยังไม่ได้เชื่อมต่อ API</td></tr>';
+  }
 }
 
 function openNewsModal() {
   document.getElementById('news-modal-title').textContent = 'เพิ่มข่าวประชาสัมพันธ์';
   document.getElementById('news-form').reset();
+  document.querySelector('#news-form [name="news_id"]').value = '';
+  document.getElementById('news-modal').classList.add('open');
+}
+
+function openEditNews(id) {
+  const n = _adminNewsCache.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('news-modal-title').textContent = 'แก้ไขข่าว';
+  const f = document.getElementById('news-form');
+  f.reset();
+  f.querySelector('[name="news_id"]').value = n.id;
+  f.querySelector('[name="category"]').value = n.category || 'ทั่วไป';
+  f.querySelector('[name="date"]').value = n.date || '';
+  f.querySelector('[name="title"]').value = n.title || '';
+  f.querySelector('[name="summary"]').value = n.summary || '';
+  f.querySelector('[name="content"]').value = n.content || '';
   document.getElementById('news-modal').classList.add('open');
 }
 
 async function submitNews(e) {
   e.preventDefault();
-  const data = {};
-  new FormData(e.target).forEach((v, k) => { data[k] = v; });
+  const payload = {};
+  new FormData(e.target).forEach((v, k) => { payload[k] = v; });
+  const email = JSON.parse(sessionStorage.getItem('adminUser')||'{}').email || '';
+  payload.email = email;
   try {
-    await API.addNews(data);
+    if (payload.news_id) {
+      payload.id = payload.news_id;
+      payload.action = 'updateNews';
+      await apiPost(payload);
+    } else {
+      await API.addNews(payload);
+    }
     showToast('บันทึกข่าวเรียบร้อยแล้ว', 'success');
     closeModal('news-modal');
     loadAdminNews();
   } catch(err) { showToast('เกิดข้อผิดพลาด', 'error'); }
 }
 
+async function togglePin(id, pinned) {
+  const email = JSON.parse(sessionStorage.getItem('adminUser')||'{}').email || '';
+  try {
+    await apiPost({ action: 'pinNews', id, pinned, email });
+    showToast(pinned ? 'ปักหมุดแล้ว' : 'เลิกปักหมุดแล้ว', 'success');
+    loadAdminNews();
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+async function moveNews(id, direction) {
+  const email = JSON.parse(sessionStorage.getItem('adminUser')||'{}').email || '';
+  try {
+    await apiPost({ action: 'reorderNews', id, direction, email });
+    loadAdminNews();
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
 async function deleteNews(id) {
   if (!confirm('ยืนยันลบข่าวนี้?')) return;
+  const email = JSON.parse(sessionStorage.getItem('adminUser')||'{}').email || '';
   try {
-    await API.deleteNews(id);
+    await apiPost({ action: 'deleteNews', id, email });
     showToast('ลบข่าวเรียบร้อยแล้ว', 'success');
     loadAdminNews();
   } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
