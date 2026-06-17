@@ -94,61 +94,13 @@
 </footer>
 
 <style>
-.news-admin-bar{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.news-admin-bar button{font-size:0.78rem;padding:3px 10px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;transition:opacity .15s}
-.btn-pin{background:#fef3c7;color:#92400e}.btn-pin.active{background:#f59e0b;color:#fff}
-.btn-up,.btn-down{background:#e0e7ff;color:#3730a3}
-.btn-edit{background:#d1fae5;color:#065f46}
-.btn-del{background:#fee2e2;color:#991b1b}
-.news-admin-bar button:hover{opacity:.8}
 .news-pinned-badge{display:inline-block;background:#f59e0b;color:#fff;font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:20px;margin-left:6px;vertical-align:middle}
-/* modal */
-#news-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center}
-#news-modal-bg.show{display:flex}
-#news-modal{background:#fff;border-radius:14px;padding:1.5rem;width:min(95vw,520px);max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)}
-#news-modal h3{color:var(--navy);margin-bottom:1rem}
-#news-modal label{display:block;font-size:0.85rem;color:#475569;margin-bottom:.25rem;margin-top:.75rem;font-weight:600}
-#news-modal input,#news-modal select,#news-modal textarea{width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box}
-#news-modal textarea{min-height:80px;resize:vertical}
-.modal-actions{display:flex;gap:8px;margin-top:1.25rem;justify-content:flex-end}
-.modal-actions button{padding:8px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit}
-.btn-save{background:var(--navy);color:#fff}.btn-cancel-modal{background:#e2e8f0;color:#334155}
 </style>
-
-<!-- Edit Modal -->
-<div id="news-modal-bg">
-  <div id="news-modal">
-    <h3 id="modal-title">แก้ไขข่าว</h3>
-    <input type="hidden" id="modal-id" />
-    <label>วันที่</label><input type="date" id="modal-date" />
-    <label>หมวดหมู่</label>
-    <select id="modal-cat">
-      <option>ประชาสัมพันธ์</option><option>กิจกรรม</option>
-      <option>สวัสดิการ</option><option>วิชาการ</option><option>ทั่วไป</option>
-    </select>
-    <label>หัวข้อข่าว</label><input type="text" id="modal-title-inp" />
-    <label>สรุปข่าว</label><textarea id="modal-summary"></textarea>
-    <label>เนื้อหาเต็ม (ไม่บังคับ)</label><textarea id="modal-content"></textarea>
-    <div class="modal-actions">
-      <button class="btn-cancel-modal" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn-save" onclick="saveNews()">บันทึก</button>
-    </div>
-  </div>
-</div>
 
 <script src="js/config.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/api.js"></script>
 <script>
-// --- ตรวจสอบ Admin ---
-function getAdminEmail() {
-  try {
-    const u = JSON.parse(sessionStorage.getItem('adminUser') || 'null');
-    if (u && CONFIG.ADMIN_EMAILS.includes(u.email)) return u.email;
-  } catch(e){}
-  return null;
-}
-
 // --- Stats ---
 async function loadStats() {
   try {
@@ -159,40 +111,36 @@ async function loadStats() {
   } catch(e) {}
 }
 
-// --- News ---
-let _newsCache = [];
-
-function newsCardHtml(n, isAdmin, idx, total) {
-  const pin = n.pinned
-    ? `<button class="btn-pin active" onclick="togglePin('${n.id}',false)" title="เลิกปักหมุด">📌 ปักหมุด</button>`
-    : `<button class="btn-pin" onclick="togglePin('${n.id}',true)" title="ปักหมุด">📌</button>`;
-  const upBtn  = idx > 0       ? `<button class="btn-up"   onclick="moveNews('${n.id}','up')">↑</button>` : '';
-  const downBtn= idx < total-1 ? `<button class="btn-down" onclick="moveNews('${n.id}','down')">↓</button>` : '';
-  const adminBar = isAdmin ? `<div class="news-admin-bar">
-    ${pin}${upBtn}${downBtn}
-    <button class="btn-edit" onclick="openEdit('${n.id}')">✏️ แก้ไข</button>
-    <button class="btn-del"  onclick="delNews('${n.id}')">🗑️ ลบ</button>
-  </div>` : '';
-  return `<div class="news-card" id="nc-${n.id}">
+// --- News (read-only, all users) ---
+function newsCardHtml(n) {
+  return `<div class="news-card">
     <div class="news-card-header">
       ${escHtml(formatDate(n.date))} &nbsp;|&nbsp; ${escHtml(n.category || 'ทั่วไป')}
       ${n.pinned ? '<span class="news-pinned-badge">📌 ปักหมุด</span>' : ''}
     </div>
     <div class="news-card-body"><h3>${escHtml(n.title)}</h3><p>${escHtml(n.summary)}</p></div>
-    ${adminBar}
+  </div>`;
+}
+
+function newsRowHtml(n) {
+  return `<div style="padding:0.75rem 1rem;border-bottom:1px solid #f0f4f8">
+    <div style="font-size:0.75rem;color:var(--gold);font-weight:600;margin-bottom:.2rem">
+      ${escHtml(formatDate(n.date))} | ${escHtml(n.category||'ทั่วไป')}
+      ${n.pinned?'<span class="news-pinned-badge">📌</span>':''}
+    </div>
+    <div style="font-weight:600;color:var(--navy);font-size:.9rem">${escHtml(n.title)}</div>
+    <div style="color:var(--text-muted);font-size:.82rem;margin-top:.2rem">${escHtml(n.summary)}</div>
   </div>`;
 }
 
 function renderNews(news) {
-  const isAdmin = !!getAdminEmail();
-  const loading = document.getElementById('news-loading');
-  const empty   = document.getElementById('news-empty');
-  const topEl   = document.getElementById('news-top');
-  const moreWrap= document.getElementById('news-more-wrap');
-  const moreEl  = document.getElementById('news-more');
+  const loading  = document.getElementById('news-loading');
+  const empty    = document.getElementById('news-empty');
+  const topEl    = document.getElementById('news-top');
+  const moreWrap = document.getElementById('news-more-wrap');
+  const moreEl   = document.getElementById('news-more');
 
   loading.style.display = 'none';
-  empty.style.display = '';
   topEl.innerHTML = '';
   moreWrap.style.display = 'none';
   moreEl.innerHTML = '';
@@ -200,19 +148,11 @@ function renderNews(news) {
   if (!news || news.length === 0) { empty.style.display = ''; return; }
   empty.style.display = 'none';
 
-  const top5 = news.slice(0, 5);
-  const rest  = news.slice(5);
-  topEl.innerHTML = top5.map((n, i) => newsCardHtml(n, isAdmin, i, news.length)).join('');
+  topEl.innerHTML = news.slice(0, 5).map(newsCardHtml).join('');
+
+  const rest = news.slice(5);
   if (rest.length > 0) {
-    moreEl.innerHTML = rest.map((n, i) => {
-      const idx = i + 5;
-      if (isAdmin) return newsCardHtml(n, true, idx, news.length);
-      return `<div style="padding:0.75rem 1rem;border-bottom:1px solid #f0f4f8">
-        <div style="font-size:0.75rem;color:var(--gold);font-weight:600;margin-bottom:.2rem">${escHtml(formatDate(n.date))} | ${escHtml(n.category||'ทั่วไป')}${n.pinned?'<span class="news-pinned-badge">📌</span>':''}</div>
-        <div style="font-weight:600;color:var(--navy);font-size:.9rem">${escHtml(n.title)}</div>
-        <div style="color:var(--text-muted);font-size:.82rem;margin-top:.2rem">${escHtml(n.summary)}</div>
-      </div>`;
-    }).join('');
+    moreEl.innerHTML = rest.map(newsRowHtml).join('');
     moreWrap.style.display = '';
   }
 }
@@ -220,69 +160,12 @@ function renderNews(news) {
 async function loadNews() {
   try {
     const data = await API.getNews();
-    _newsCache = data.news || [];
-    renderNews(_newsCache);
+    renderNews(data.news || []);
   } catch(e) {
     document.getElementById('news-loading').style.display = 'none';
     document.getElementById('news-top').innerHTML =
       '<p style="color:var(--text-muted);padding:.5rem">⚠️ ยังไม่ได้เชื่อมต่อ API</p>';
   }
-}
-
-// --- Admin Actions ---
-async function togglePin(id, pinned) {
-  const email = getAdminEmail(); if (!email) return;
-  await apiPost({ action: 'pinNews', id, pinned, email });
-  await loadNews();
-}
-
-async function moveNews(id, direction) {
-  const email = getAdminEmail(); if (!email) return;
-  await apiPost({ action: 'reorderNews', id, direction, email });
-  await loadNews();
-}
-
-async function delNews(id) {
-  if (!confirm('ลบข่าวนี้?')) return;
-  const email = getAdminEmail(); if (!email) return;
-  await apiPost({ action: 'deleteNews', id, email });
-  await loadNews();
-}
-
-// --- Edit Modal ---
-function openEdit(id) {
-  const n = _newsCache.find(x => x.id === id);
-  if (!n) return;
-  document.getElementById('modal-id').value = n.id;
-  document.getElementById('modal-date').value = n.date || '';
-  document.getElementById('modal-cat').value = n.category || 'ทั่วไป';
-  document.getElementById('modal-title-inp').value = n.title || '';
-  document.getElementById('modal-summary').value = n.summary || '';
-  document.getElementById('modal-content').value = n.content || '';
-  document.getElementById('modal-title').textContent = 'แก้ไขข่าว';
-  document.getElementById('news-modal-bg').classList.add('show');
-}
-
-function closeModal() {
-  document.getElementById('news-modal-bg').classList.remove('show');
-}
-
-document.getElementById('news-modal-bg').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
-async function saveNews() {
-  const email = getAdminEmail(); if (!email) return;
-  const id      = document.getElementById('modal-id').value;
-  const date    = document.getElementById('modal-date').value;
-  const category= document.getElementById('modal-cat').value;
-  const title   = document.getElementById('modal-title-inp').value.trim();
-  const summary = document.getElementById('modal-summary').value.trim();
-  const content = document.getElementById('modal-content').value.trim();
-  if (!title) { alert('กรุณาใส่หัวข้อข่าว'); return; }
-  await apiPost({ action: 'updateNews', id, date, category, title, summary, content, email });
-  closeModal();
-  await loadNews();
 }
 
 loadStats();
