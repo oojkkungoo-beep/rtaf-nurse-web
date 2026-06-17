@@ -347,7 +347,7 @@ function renderRows(members) {
   tbody.innerHTML = members.map((m, i) => {
     const no     = escHtml(String(m.row_num || (i+1)));
     const name   = escHtml([m.rank, m.fname, m.lname].filter(Boolean).join(' '));
-    const gen    = m.gen ? 'รุ่น ' + escHtml(String(m.gen)) : '-';
+    const gen    = escHtml(String(m.gen || '-'));
     const type   = escHtml(m.type || '-');
     const inst   = escHtml(m.institution || '-');
     const work   = escHtml(m.workplace || '-');
