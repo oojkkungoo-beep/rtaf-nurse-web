@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <div class="brand-text">
+      <div class="title">ชศพอ.</div>
+      <div class="subtitle">ชุมนุมศิษย์พยาบาลทหารอากาศ</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html" class="active">หน้าหลัก</a>
+    <a href="members.html">ค้นหาสมาชิก</a>
+    <a href="register.html">สมัครสมาชิก</a>
+    <a href="admin/index.html" class="admin-btn">Admin</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>ชุมนุมศิษย์พยาบาลทหารอากาศ</h1>
+  <p>Royal Thai Air Force Nurse Alumni Association</p>
+</div>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="stat-total">—</div><div class="stat-label">สมาชิกทั้งหมด</div></div>
+  <div class="stat-item"><div class="stat-num" id="stat-active">—</div><div class="stat-label">สมาชิกสามัญ</div></div>
+  <div class="stat-item"><div class="stat-num" id="stat-gen">—</div><div class="stat-label">จำนวนรุ่น</div></div>
+</div>
+
+<div class="section">
+  <div class="section-title">ข่าวประชาสัมพันธ์</div>
+  <div class="news-grid" id="news-grid">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<footer>
+  <p>ชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.) &nbsp;|&nbsp; nurse.rtafnc@gmail.com</p>
+  <p style="margin-top:0.3rem">© 2024 สงวนลิขสิทธิ์</p>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script>
+async function loadStats() {
+  try {
+    const data = await API.getStats();
+    document.getElementById('stat-total').textContent = (data.total || 0).toLocaleString();
+    document.getElementById('stat-active').textContent = (data.active || 0).toLocaleString();
+    document.getElementById('stat-gen').textContent = (data.generations || 0).toLocaleString();
+  } catch(e) { /* ถ้า API ยังไม่ setup ไม่ error */ }
+}
+
+async function loadNews() {
+  try {
+    const data = await API.getNews();
+    const grid = document.getElementById('news-grid');
+    if (!data.news || data.news.length === 0) {
+      grid.innerHTML = '<p style="color:var(--text-muted);padding:1rem">ยังไม่มีข่าวประชาสัมพันธ์</p>';
+      return;
+    }
+    grid.innerHTML = data.news.map(n => `
+      <div class="news-card">
+        <div class="news-card-header">${escHtml(formatDate(n.date))} &nbsp;|&nbsp; ${escHtml(n.category || 'ทั่วไป')}</div>
+        <div class="news-card-body">
+          <h3>${escHtml(n.title)}</h3>
+          <p>${escHtml(n.summary)}</p>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('news-grid').innerHTML =
+      '<p style="color:var(--text-muted);padding:1rem">⚠️ ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน</p>';
+  }
+}
+
+loadStats();
+loadNews();
+</script>
+</body>
+</html>

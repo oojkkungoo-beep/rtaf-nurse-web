@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สมัครสมาชิก — ชศพอ.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <div class="brand-text">
+      <div class="title">ชศพอ.</div>
+      <div class="subtitle">ชุมนุมศิษย์พยาบาลทหารอากาศ</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">หน้าหลัก</a>
+    <a href="members.html">ค้นหาสมาชิก</a>
+    <a href="register.html" class="active">สมัครสมาชิก</a>
+    <a href="admin/index.html" class="admin-btn">Admin</a>
+  </div>
+</nav>
+
+<div class="hero" style="padding:2rem 1.5rem">
+  <h1>ใบสมัครสมาชิก</h1>
+  <p>ชุมนุมศิษย์พยาบาลทหารอากาศ (ตลอดชีพ) — ค่าสมาชิก 500 บาท</p>
+</div>
+
+<div class="section">
+  <div class="form-card">
+
+    <div id="success-msg" style="display:none;background:#dcfce7;border:2px solid #16a34a;border-radius:10px;padding:1.5rem;text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:2rem;margin-bottom:0.5rem">✅</div>
+      <h3 style="color:#166534">ส่งใบสมัครเรียบร้อยแล้ว</h3>
+      <p style="color:#15803d;margin-top:0.4rem">เจ้าหน้าที่จะตรวจสอบและยืนยันภายใน 3-5 วันทำการ</p>
+    </div>
+
+    <form id="reg-form" onsubmit="submitForm(event)">
+
+      <div class="form-section-title">ข้อมูลส่วนตัว</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ยศ <span style="color:#dc2626">*</span></label>
+          <select name="rank" required>
+            <option value="">— เลือก —</option>
+            <option>พลอากาศเอก</option><option>พลอากาศโท</option><option>พลอากาศตรี</option>
+            <option>นาวาอากาศเอก</option><option>นาวาอากาศโท</option><option>นาวาอากาศตรี</option>
+            <option>เรืออากาศเอก</option><option>เรืออากาศโท</option><option>เรืออากาศตรี</option>
+            <option>พันเอก</option><option>พันโท</option><option>พันตรี</option>
+            <option>ร้อยเอก</option><option>ร้อยโท</option><option>ร้อยตรี</option>
+            <option>นาย</option><option>นาง</option><option>นางสาว</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>รุ่นที่ <span style="color:#dc2626">*</span></label>
+          <input type="number" name="generation" min="1" placeholder="เช่น 34" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ชื่อ <span style="color:#dc2626">*</span></label>
+          <input type="text" name="firstname" placeholder="ชื่อจริง" required />
+        </div>
+        <div class="form-group">
+          <label>นามสกุล <span style="color:#dc2626">*</span></label>
+          <input type="text" name="lastname" placeholder="นามสกุล" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>วัน/เดือน/ปีเกิด <span style="color:#dc2626">*</span></label>
+          <input type="date" name="birthdate" required />
+        </div>
+        <div class="form-group">
+          <label>สถาบันการศึกษา <span style="color:#dc2626">*</span></label>
+          <select name="institution" required>
+            <option value="">— เลือก —</option>
+            <option value="วพอ">รร.จอ. (วพอ.)</option>
+            <option value="อื่น">รร.จอ. (อื่นๆ)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section-title">สถานที่ทำงานปัจจุบัน</div>
+      <div class="form-group">
+        <label>หน่วยงาน / สถานที่ทำงาน</label>
+        <input type="text" name="workplace" placeholder="ชื่อหน่วยงาน" />
+      </div>
+      <div class="form-group">
+        <label>ที่อยู่ที่ทำงาน</label>
+        <input type="text" name="work_address" placeholder="ที่อยู่ที่ทำงาน" />
+      </div>
+      <div class="form-group">
+        <label>เบอร์โทรศัพท์ที่ทำงาน</label>
+        <input type="tel" name="work_phone" placeholder="02-xxx-xxxx" />
+      </div>
+
+      <div class="form-section-title">ที่อยู่บ้าน</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>บ้านเลขที่ <span style="color:#dc2626">*</span></label>
+          <input type="text" name="home_no" placeholder="บ้านเลขที่" required />
+        </div>
+        <div class="form-group">
+          <label>หมู่ที่</label>
+          <input type="text" name="home_moo" placeholder="หมู่ที่" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ซอย</label>
+          <input type="text" name="home_soi" placeholder="ซอย" />
+        </div>
+        <div class="form-group">
+          <label>ถนน</label>
+          <input type="text" name="home_road" placeholder="ถนน" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ตำบล / แขวง <span style="color:#dc2626">*</span></label>
+          <input type="text" name="home_tambon" placeholder="ตำบล / แขวง" required />
+        </div>
+        <div class="form-group">
+          <label>อำเภอ / เขต <span style="color:#dc2626">*</span></label>
+          <input type="text" name="home_amphoe" placeholder="อำเภอ / เขต" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>จังหวัด <span style="color:#dc2626">*</span></label>
+          <input type="text" name="home_province" placeholder="จังหวัด" required />
+        </div>
+        <div class="form-group">
+          <label>รหัสไปรษณีย์ <span style="color:#dc2626">*</span></label>
+          <input type="text" name="home_postcode" placeholder="10200" maxlength="5" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>เบอร์โทรศัพท์บ้าน</label>
+        <input type="tel" name="home_phone" placeholder="02-xxx-xxxx" />
+      </div>
+
+      <div class="form-section-title">สถานภาพ</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>สถานภาพ <span style="color:#dc2626">*</span></label>
+          <select name="marital_status" required onchange="toggleSpouse(this.value)">
+            <option value="">— เลือก —</option>
+            <option value="โสด">โสด</option>
+            <option value="สมรส">สมรส</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <div class="form-group" id="spouse-group" style="display:none">
+          <label>ชื่อคู่สมรส</label>
+          <input type="text" name="spouse_name" placeholder="ชื่อ-นามสกุลคู่สมรส" />
+        </div>
+      </div>
+
+      <div class="form-section-title">ที่อยู่ติดต่อได้โดยตรง</div>
+      <div class="form-group">
+        <label>ที่อยู่ <span style="color:#dc2626">*</span></label>
+        <input type="text" name="contact_address" placeholder="ที่อยู่ที่ติดต่อได้" required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ตำบล / แขวง</label>
+          <input type="text" name="contact_tambon" />
+        </div>
+        <div class="form-group">
+          <label>อำเภอ / เขต</label>
+          <input type="text" name="contact_amphoe" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>จังหวัด</label>
+          <input type="text" name="contact_province" />
+        </div>
+        <div class="form-group">
+          <label>รหัสไปรษณีย์</label>
+          <input type="text" name="contact_postcode" maxlength="5" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>เบอร์มือถือ <span style="color:#dc2626">*</span></label>
+        <input type="tel" name="mobile_phone" placeholder="08x-xxx-xxxx" required />
+      </div>
+
+      <div class="form-section-title">ประเภทสมาชิก</div>
+      <div class="form-group">
+        <label>ประเภท <span style="color:#dc2626">*</span></label>
+        <select name="member_type" required>
+          <option value="">— เลือก —</option>
+          <option value="สามัญ">สามัญ</option>
+          <option value="สมทบ">สมทบ</option>
+        </select>
+        <span class="hint">สมาชิกสามัญ — บุคลากรพยาบาลกองทัพอากาศ / สมทบ — บุคคลทั่วไปที่เกี่ยวข้อง</span>
+      </div>
+
+      <div style="margin-top:1.5rem;padding:1rem;background:var(--light-blue);border-radius:8px;font-size:0.88rem;color:var(--text-muted)">
+        <strong>หมายเหตุ:</strong> กรุณาชำระค่าสมาชิกตลอดชีพ 500 บาท พร้อมแนบหลักฐานการโอนเงินส่งมาที่ nurse.rtafnc@gmail.com
+      </div>
+
+      <div style="margin-top:1.5rem;display:flex;justify-content:center">
+        <button type="submit" class="btn btn-primary" style="min-width:200px;padding:0.8rem 2rem" id="submit-btn">
+          ส่งใบสมัคร
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <p>ชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.) &nbsp;|&nbsp; nurse.rtafnc@gmail.com</p>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script>
+function toggleSpouse(val) {
+  document.getElementById('spouse-group').style.display = val === 'สมรส' ? 'flex' : 'none';
+}
+
+async function submitForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังส่ง...';
+
+  const form = e.target;
+  const data = {};
+  new FormData(form).forEach((v, k) => { data[k] = v; });
+
+  try {
+    const res = await API.submitRegistration(data);
+    if (res.success) {
+      form.style.display = 'none';
+      document.getElementById('success-msg').style.display = 'block';
+    } else {
+      showToast(res.message || 'เกิดข้อผิดพลาด', 'error');
+      btn.disabled = false;
+      btn.textContent = 'ส่งใบสมัคร';
+    }
+  } catch(err) {
+    showToast('ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน', 'error');
+    btn.disabled = false;
+    btn.textContent = 'ส่งใบสมัคร';
+  }
+}
+</script>
+</body>
+</html>

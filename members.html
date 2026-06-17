@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ค้นหาสมาชิก — ชศพอ.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <div class="brand-text">
+      <div class="title">ชศพอ.</div>
+      <div class="subtitle">ชุมนุมศิษย์พยาบาลทหารอากาศ</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">หน้าหลัก</a>
+    <a href="members.html" class="active">ค้นหาสมาชิก</a>
+    <a href="register.html">สมัครสมาชิก</a>
+    <a href="admin/index.html" class="admin-btn">Admin</a>
+  </div>
+</nav>
+
+<div class="hero" style="padding:2rem 1.5rem">
+  <h1>ค้นหาสมาชิก</h1>
+  <p>ตรวจสอบรายชื่อสมาชิกชุมนุมศิษย์พยาบาลทหารอากาศ</p>
+</div>
+
+<div class="section">
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="ค้นหาชื่อ / นามสกุล / เลขที่สมาชิก..." />
+    <select id="filter-gen">
+      <option value="">ทุกรุ่น</option>
+    </select>
+    <select id="filter-type">
+      <option value="">ทุกประเภท</option>
+      <option value="สามัญ">สามัญ</option>
+      <option value="สมทบ">สมทบ</option>
+    </select>
+    <button class="btn btn-primary" onclick="doSearch(1)">ค้นหา</button>
+  </div>
+
+  <div id="result-count" style="margin-bottom:0.75rem;font-size:0.88rem;color:var(--text-muted)"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>เลขที่</th>
+          <th>ยศ ชื่อ นามสกุล</th>
+          <th>รุ่น</th>
+          <th>ประเภท</th>
+          <th>สถาบัน</th>
+          <th>สถานะ</th>
+          <th>เบอร์โทร</th>
+        </tr>
+      </thead>
+      <tbody id="member-tbody">
+        <tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="pagination"></div>
+</div>
+
+<footer>
+  <p>ชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.) &nbsp;|&nbsp; nurse.rtafnc@gmail.com</p>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script>
+let currentPage = 1;
+let totalResults = 0;
+
+async function loadGenerations() {
+  try {
+    const data = await API.getStats();
+    const sel = document.getElementById('filter-gen');
+    for (let i = 1; i <= (data.generations || 0); i++) {
+      sel.innerHTML += `<option value="${i}">รุ่นที่ ${i}</option>`;
+    }
+  } catch(e) {}
+}
+
+async function doSearch(page = 1) {
+  currentPage = page;
+  const query = document.getElementById('search-input').value.trim();
+  const gen   = document.getElementById('filter-gen').value;
+  const type  = document.getElementById('filter-type').value;
+  const tbody = document.getElementById('member-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>';
+
+  try {
+    const data = await API.searchMembers(query, gen, type, page);
+    totalResults = data.total || 0;
+    document.getElementById('result-count').textContent =
+      `พบ ${totalResults.toLocaleString()} รายการ`;
+
+    if (!data.members || data.members.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูลสมาชิก</td></tr>';
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = data.members.map(m => `
+      <tr>
+        <td><span class="badge badge-blue">${escHtml(m.member_id)}</span></td>
+        <td><strong>${escHtml(m.rank)} ${escHtml(m.firstname)} ${escHtml(m.lastname)}</strong></td>
+        <td>${escHtml(m.generation) ? 'รุ่นที่ ' + escHtml(String(m.generation)) : '-'}</td>
+        <td>${escHtml(m.type) || '-'}</td>
+        <td>${escHtml(m.institution) || '-'}</td>
+        <td><span class="badge ${m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red'}">${escHtml(m.status)}</span></td>
+        <td>${escHtml(m.phone) || '-'}</td>
+      </tr>
+    `).join('');
+
+    renderPagination('pagination', totalResults, currentPage, 'doSearch');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#dc2626">
+      ⚠️ ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน
+    </td></tr>`;
+  }
+}
+
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch(1);
+});
+
+loadGenerations();
+doSearch(1);
+</script>
+</body>
+</html>

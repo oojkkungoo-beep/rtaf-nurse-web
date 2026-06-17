@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — ชศพอ.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .admin-layout { display: flex; min-height: calc(100vh - 60px); }
+    .sidebar {
+      width: 220px; background: var(--navy); color: white;
+      padding: 1.5rem 0; flex-shrink: 0;
+    }
+    .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; color: #8899bb; text-transform: uppercase; letter-spacing: 1px; }
+    .sidebar a {
+      display: block; padding: 0.7rem 1.25rem; color: #ccd; text-decoration: none;
+      font-size: 0.9rem; transition: all 0.2s; border-left: 3px solid transparent;
+    }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--gold); }
+    .sidebar .divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 0.75rem 0; }
+    .main-content { flex: 1; padding: 2rem; overflow: auto; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 500; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; border-radius: 12px; padding: 2rem; max-width: 540px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { color: var(--navy); margin-bottom: 1.25rem; }
+    .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+    .user-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: rgba(255,255,255,0.1); margin: 0 0.75rem 1rem; border-radius: 8px; }
+    .user-chip img { width: 32px; height: 32px; border-radius: 50%; }
+    .user-chip span { font-size: 0.82rem; color: #ccd; }
+  </style>
+</head>
+<body>
+
+<!-- Auth overlay -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="logo">🏥</div>
+    <h2>Admin Panel</h2>
+    <p>ชุมนุมศิษย์พยาบาลทหารอากาศ<br/>เข้าสู่ระบบด้วย Google Account</p>
+    <div id="google-signin-btn"></div>
+  </div>
+</div>
+
+<nav class="navbar">
+  <a href="../index.html" class="navbar-brand">
+    <div class="brand-text">
+      <div class="title">ชศพอ. Admin</div>
+      <div class="subtitle">ชุมนุมศิษย์พยาบาลทหารอากาศ</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="../index.html">← กลับหน้าหลัก</a>
+    <button class="btn btn-sm" onclick="signOut()" style="color:white;background:rgba(255,255,255,0.15)">ออกจากระบบ</button>
+  </div>
+</nav>
+
+<div class="admin-layout">
+  <div class="sidebar">
+    <div id="user-chip" class="user-chip" style="display:none">
+      <img id="user-avatar" src="" alt="" />
+      <div><div id="user-name" style="font-size:0.85rem;color:white"></div><span>Admin</span></div>
+    </div>
+    <div class="sidebar-title">เมนู</div>
+    <a href="#" class="active" onclick="showTab('dashboard',this)">📊 ภาพรวม</a>
+    <a href="#" onclick="showTab('pending',this)">📋 ใบสมัครใหม่ <span id="pending-badge"></span></a>
+    <a href="#" onclick="showTab('members',this)">👥 จัดการสมาชิก</a>
+    <a href="#" onclick="showTab('logbook',this)">📒 Logbook สวัสดิการ</a>
+    <div class="divider"></div>
+    <a href="#" onclick="showTab('news',this)">📢 จัดการข่าว</a>
+  </div>
+
+  <div class="main-content">
+
+    <!-- Dashboard -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="section-title">ภาพรวมระบบ</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:2rem" id="stat-cards">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Pending -->
+    <div class="tab-content" id="tab-pending">
+      <div class="section-title">ใบสมัครรอการอนุมัติ</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>วันที่สมัคร</th><th>ยศ ชื่อ</th><th>รุ่น</th><th>ประเภท</th><th>เบอร์มือถือ</th><th>การดำเนินการ</th></tr>
+          </thead>
+          <tbody id="pending-tbody"><tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div class="tab-content" id="tab-members">
+      <div class="section-title">จัดการสมาชิก</div>
+      <div class="search-box">
+        <input type="text" id="admin-search" placeholder="ค้นหาชื่อ / เลขที่..." />
+        <button class="btn btn-primary btn-sm" onclick="adminSearchMembers(1)">ค้นหา</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>เลขที่</th><th>ยศ ชื่อ นามสกุล</th><th>รุ่น</th><th>ประเภท</th><th>สถานะ</th><th>เบอร์โทร</th><th>แก้ไข</th></tr>
+          </thead>
+          <tbody id="admin-member-tbody"><tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+      <div id="admin-pagination"></div>
+    </div>
+
+    <!-- Logbook -->
+    <div class="tab-content" id="tab-logbook">
+      <div class="section-title">Logbook สวัสดิการ</div>
+      <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap">
+        <input type="text" id="logbook-member-id" placeholder="เลขที่สมาชิก" style="padding:0.5rem 0.8rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit" />
+        <button class="btn btn-primary btn-sm" onclick="loadLogbooks()">ดู Logbook</button>
+        <button class="btn btn-gold btn-sm" onclick="openLogbookModal()">+ บันทึกใหม่</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>วันที่</th><th>เลขที่สมาชิก</th><th>สวัสดิการ</th><th>กิจกรรม</th><th>ผู้อนุมัติ</th><th>ผู้บันทึก</th></tr>
+          </thead>
+          <tbody id="logbook-tbody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">กรอกเลขที่สมาชิกเพื่อดู Logbook</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- News -->
+    <div class="tab-content" id="tab-news">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <div class="section-title" style="margin-bottom:0">จัดการข่าวประชาสัมพันธ์</div>
+        <button class="btn btn-gold btn-sm" onclick="openNewsModal()">+ เพิ่มข่าว</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>วันที่</th><th>หมวด</th><th>หัวข้อ</th><th>สรุป</th><th>แก้ไข</th></tr></thead>
+          <tbody id="news-tbody"><tr><td colspan="5" class="loading"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Logbook -->
+<div class="modal-overlay" id="logbook-modal">
+  <div class="modal">
+    <h3>บันทึก Logbook สวัสดิการ</h3>
+    <form id="logbook-form" onsubmit="submitLogbook(event)">
+      <div class="form-group"><label>เลขที่สมาชิก *</label><input type="text" name="member_id" required /></div>
+      <div class="form-group"><label>สวัสดิการ *</label>
+        <select name="welfare" required>
+          <option value="">— เลือก —</option>
+          <option>เงินช่วยเหลือฌาปนกิจ</option>
+          <option>ทุนการศึกษาบุตร</option>
+          <option>เยี่ยมไข้</option>
+          <option>อื่นๆ</option>
+        </select>
+      </div>
+      <div class="form-group"><label>กิจกรรม / รายละเอียด *</label><textarea name="activity" rows="3" required style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
+      <div class="form-group"><label>ผู้อนุมัติ *</label><input type="text" name="approver" required /></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm" onclick="closeModal('logbook-modal')" style="background:#eee">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary btn-sm">บันทึก</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: News -->
+<div class="modal-overlay" id="news-modal">
+  <div class="modal">
+    <h3 id="news-modal-title">เพิ่มข่าวประชาสัมพันธ์</h3>
+    <form id="news-form" onsubmit="submitNews(event)">
+      <input type="hidden" name="news_id" />
+      <div class="form-group"><label>หมวดหมู่</label>
+        <select name="category">
+          <option>ทั่วไป</option><option>กิจกรรม</option><option>สวัสดิการ</option><option>ประกาศ</option>
+        </select>
+      </div>
+      <div class="form-group"><label>หัวข้อข่าว *</label><input type="text" name="title" required /></div>
+      <div class="form-group"><label>สรุปข่าว *</label><textarea name="summary" rows="4" required style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
+      <div class="form-group"><label>วันที่</label><input type="date" name="date" /></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm" onclick="closeModal('news-modal')" style="background:#eee">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary btn-sm">บันทึก</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="../js/config.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+// Auth callbacks
+function onAuthSuccess(user) {
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('user-chip').style.display = 'flex';
+  document.getElementById('user-name').textContent = user.name;
+  document.getElementById('user-avatar').src = user.picture;
+  loadDashboard();
+  loadPending();
+  loadAdminNews();
+}
+function onAuthSignOut() {
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('user-chip').style.display = 'none';
+}
+
+window.addEventListener('load', () => {
+  initGoogleAuth();
+  showGoogleSignIn('google-signin-btn');
+});
+
+// Tab navigation
+function showTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'members') adminSearchMembers(1);
+  if (name === 'logbook') loadLogbooks();
+}
+
+// Dashboard
+async function loadDashboard() {
+  try {
+    const data = await API.getStats();
+    document.getElementById('stat-cards').innerHTML = [
+      { label: 'สมาชิกทั้งหมด', val: data.total, color: '#1a2a5e' },
+      { label: 'มีชีวิต', val: data.active, color: '#166534' },
+      { label: 'เสียชีวิต', val: data.deceased, color: '#991b1b' },
+      { label: 'จำนวนรุ่น', val: data.generations, color: '#92400e' },
+    ].map(s => `
+      <div style="background:white;border-radius:10px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.07);border-top:4px solid ${s.color}">
+        <div style="font-size:2rem;font-weight:700;color:${s.color}">${(s.val||0).toLocaleString()}</div>
+        <div style="font-size:0.85rem;color:var(--text-muted)">${s.label}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('stat-cards').innerHTML = '<p style="color:var(--text-muted)">ยังไม่ได้เชื่อมต่อ API</p>';
+  }
+}
+
+// Pending
+async function loadPending() {
+  try {
+    const data = await API.getPendingRegistrations();
+    const rows = data.pending || [];
+    document.getElementById('pending-badge').textContent = rows.length ? `(${rows.length})` : '';
+    const tbody = document.getElementById('pending-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่มีใบสมัครรอการอนุมัติ</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${escHtml(formatDate(r.submitted_at))}</td>
+        <td>${escHtml(r.rank)} ${escHtml(r.firstname)} ${escHtml(r.lastname)}</td>
+        <td>รุ่นที่ ${escHtml(String(r.generation))}</td>
+        <td>${escHtml(r.member_type)}</td>
+        <td>${escHtml(r.mobile_phone)}</td>
+        <td>
+          <button class="btn btn-sm btn-gold" onclick="approveMember('${escHtml(r.row_id)}')">อนุมัติ</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectMember('${escHtml(r.row_id)}')">ปฏิเสธ</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {}
+}
+
+async function approveMember(id) {
+  if (!confirm('ยืนยันอนุมัติสมาชิกรายนี้?')) return;
+  try {
+    await API.approveMember(id);
+    showToast('อนุมัติเรียบร้อยแล้ว', 'success');
+    loadPending();
+    loadDashboard();
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+async function rejectMember(id) {
+  if (!confirm('ยืนยันปฏิเสธใบสมัครนี้?')) return;
+  try {
+    await API.deleteMember(id);
+    showToast('ปฏิเสธใบสมัครแล้ว', 'success');
+    loadPending();
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+// Admin Members
+let adminPage = 1;
+async function adminSearchMembers(page) {
+  adminPage = page;
+  const query = document.getElementById('admin-search').value.trim();
+  const tbody = document.getElementById('admin-member-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>';
+  try {
+    const data = await API.searchMembers(query, '', '', page);
+    if (!data.members?.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูล</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.members.map(m => `
+      <tr>
+        <td><span class="badge badge-blue">${escHtml(m.member_id)}</span></td>
+        <td>${escHtml(m.rank)} ${escHtml(m.firstname)} ${escHtml(m.lastname)}</td>
+        <td>${m.generation ? 'รุ่นที่ ' + m.generation : '-'}</td>
+        <td>${escHtml(m.type)||'-'}</td>
+        <td><span class="badge ${m.status==='มีชีวิต'?'badge-green':'badge-red'}">${escHtml(m.status)}</span></td>
+        <td>${escHtml(m.phone)||'-'}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="deleteMember('${escHtml(m.member_id)}')">ลบ</button></td>
+      </tr>
+    `).join('');
+    renderPagination('admin-pagination', data.total, page, 'adminSearchMembers');
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:#dc2626;text-align:center;padding:1rem">ยังไม่ได้เชื่อมต่อ API</td></tr>'; }
+}
+
+async function deleteMember(id) {
+  if (!confirm(`ยืนยันลบสมาชิก ${id}?`)) return;
+  try {
+    await API.deleteMember(id);
+    showToast('ลบเรียบร้อยแล้ว', 'success');
+    adminSearchMembers(adminPage);
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+// Logbook
+async function loadLogbooks() {
+  const id = document.getElementById('logbook-member-id').value.trim();
+  const tbody = document.getElementById('logbook-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr>';
+  try {
+    const data = await API.getLogbooks(id);
+    const rows = data.logbooks || [];
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบ Logbook</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${escHtml(formatDate(r.timestamp))}</td>
+        <td>${escHtml(r.member_id)}</td>
+        <td>${escHtml(r.welfare)}</td>
+        <td>${escHtml(r.activity)}</td>
+        <td>${escHtml(r.approver)}</td>
+        <td>${escHtml(r.recorder)}</td>
+      </tr>
+    `).join('');
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:#dc2626;text-align:center">ยังไม่ได้เชื่อมต่อ API</td></tr>'; }
+}
+
+function openLogbookModal() { document.getElementById('logbook-modal').classList.add('open'); }
+
+async function submitLogbook(e) {
+  e.preventDefault();
+  const data = {};
+  new FormData(e.target).forEach((v, k) => { data[k] = v; });
+  try {
+    await API.addLogbook(data);
+    showToast('บันทึก Logbook เรียบร้อยแล้ว', 'success');
+    closeModal('logbook-modal');
+    e.target.reset();
+    loadLogbooks();
+  } catch(err) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+// News
+async function loadAdminNews() {
+  try {
+    const data = await API.getNews();
+    const tbody = document.getElementById('news-tbody');
+    if (!data.news?.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)">ยังไม่มีข่าว</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.news.map(n => `
+      <tr>
+        <td>${escHtml(formatDate(n.date))}</td>
+        <td>${escHtml(n.category)}</td>
+        <td>${escHtml(n.title)}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(n.summary)}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="deleteNews('${escHtml(n.id)}')">ลบ</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { document.getElementById('news-tbody').innerHTML = '<tr><td colspan="5" style="color:#dc2626;text-align:center">ยังไม่ได้เชื่อมต่อ API</td></tr>'; }
+}
+
+function openNewsModal() {
+  document.getElementById('news-modal-title').textContent = 'เพิ่มข่าวประชาสัมพันธ์';
+  document.getElementById('news-form').reset();
+  document.getElementById('news-modal').classList.add('open');
+}
+
+async function submitNews(e) {
+  e.preventDefault();
+  const data = {};
+  new FormData(e.target).forEach((v, k) => { data[k] = v; });
+  try {
+    await API.addNews(data);
+    showToast('บันทึกข่าวเรียบร้อยแล้ว', 'success');
+    closeModal('news-modal');
+    loadAdminNews();
+  } catch(err) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+async function deleteNews(id) {
+  if (!confirm('ยืนยันลบข่าวนี้?')) return;
+  try {
+    await API.deleteNews(id);
+    showToast('ลบข่าวเรียบร้อยแล้ว', 'success');
+    loadAdminNews();
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
+</body>
+</html>
