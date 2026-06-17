@@ -206,11 +206,14 @@ function getFilterOptions() {
     if (g) genSet[g] = true;
     if (t) typeSet[t] = true;
   });
-  const gens = Object.keys(genSet)
-    .map(Number).filter(function(n) { return !isNaN(n) && n > 0; })
-    .sort(function(a,b) { return a-b; })
-    .map(String);
-  const types = Object.keys(typeSet).sort();
+  const gens = Object.keys(genSet).sort(function(a, b) {
+    const na = parseFloat(a), nb = parseFloat(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    if (!isNaN(na)) return -1;
+    if (!isNaN(nb)) return 1;
+    return a.localeCompare(b, 'th');
+  });
+  const types = Object.keys(typeSet).sort(function(a,b){ return a.localeCompare(b,'th'); });
   return { generations: gens, types: types };
 }
 

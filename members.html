@@ -193,13 +193,8 @@
   <!-- Search bar -->
   <div class="search-bar">
     <input type="text" id="s-name" placeholder="ค้นหาชื่อ / นามสกุล" />
-    <select id="s-gen"><option value="">ทุกรุ่น</option></select>
-    <select id="s-type">
-      <option value="">ทุกประเภท</option>
-      <option value="สามัญ">สามัญ</option>
-      <option value="สมทบ">สมทบ</option>
-      <option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
-    </select>
+    <select id="s-gen" onchange="doSearch()"><option value="">ทุกรุ่น</option></select>
+    <select id="s-type" onchange="doSearch()"><option value="">ทุกประเภท</option></select>
     <button class="btn btn-primary" onclick="doSearch()">ค้นหา</button>
   </div>
 
