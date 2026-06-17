@@ -209,6 +209,7 @@
 <script>
 // Auth callbacks
 function onAuthSuccess(user) {
+  sessionStorage.setItem('adminUser', JSON.stringify({ email: user.email, name: user.name }));
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('user-chip').style.display = 'flex';
   document.getElementById('user-name').textContent = user.name;

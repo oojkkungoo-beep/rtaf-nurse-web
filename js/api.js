@@ -8,9 +8,9 @@ async function apiGet(params = {}) {
 }
 
 async function apiPost(data = {}) {
+  // ไม่ใส่ Content-Type เพื่อหลีกเลี่ยง CORS preflight กับ Apps Script
   const res = await fetch(CONFIG.API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('API error: ' + res.status);

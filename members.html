@@ -8,6 +8,162 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Search bar ── */
+    .search-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      margin-bottom: 1rem;
+    }
+    .search-bar input[type="text"] {
+      flex: 2 1 180px;
+      min-width: 120px;
+      padding: .55rem .85rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: .93rem;
+    }
+    .search-bar select {
+      flex: 1 1 110px;
+      min-width: 90px;
+      padding: .55rem .7rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: .93rem;
+      background: #fff;
+    }
+    .search-bar .btn {
+      flex: 0 0 auto;
+      padding: .55rem 1.3rem;
+      white-space: nowrap;
+    }
+
+    /* ── Result meta ── */
+    .result-meta {
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-bottom: .5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+    .admin-badge {
+      background: var(--gold);
+      color: #1a1a2e;
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      letter-spacing: .5px;
+    }
+
+    /* ── Scrollable table wrapper ── */
+    .table-scroll {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 62vh;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-scroll table {
+      min-width: 520px;
+      border-radius: 0;
+      border: none;
+    }
+    .table-scroll thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--navy);
+      color: #fff;
+      white-space: nowrap;
+      padding: .65rem .9rem;
+      font-size: .82rem;
+    }
+    .table-scroll tbody tr:nth-child(even) { background: #f8f9fc; }
+    .table-scroll tbody tr:hover { background: #eef2ff; }
+    .table-scroll td {
+      padding: .55rem .9rem;
+      font-size: .88rem;
+      vertical-align: middle;
+      border-bottom: 1px solid #f0f0f5;
+      white-space: nowrap;
+    }
+    /* col widths */
+    .col-no   { width: 52px; text-align: center; }
+    .col-gen  { width: 60px; text-align: center; }
+    .col-name { min-width: 160px; white-space: normal; }
+    .col-type { width: 90px; }
+    .col-stat { width: 80px; }
+    .col-act  { width: 100px; text-align: center; }
+
+    /* ── Action buttons ── */
+    .btn-edit, .btn-del {
+      border: none;
+      border-radius: 6px;
+      padding: .3rem .65rem;
+      font-size: .78rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .15s;
+    }
+    .btn-edit { background: #3b82f6; color: #fff; margin-right: .25rem; }
+    .btn-del  { background: #ef4444; color: #fff; }
+    .btn-edit:hover, .btn-del:hover { opacity: .82; }
+
+    /* ── Edit modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    }
+    .modal-box h3 { color: var(--navy); margin-bottom: 1rem; }
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .7rem;
+    }
+    .modal-grid label { font-size: .82rem; color: #555; display: block; margin-bottom: .2rem; }
+    .modal-grid input, .modal-grid select, .modal-grid textarea {
+      width: 100%;
+      padding: .45rem .7rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: .9rem;
+      box-sizing: border-box;
+    }
+    .modal-grid .full { grid-column: 1 / -1; }
+    .modal-actions { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .search-bar input[type="text"] { flex: 1 1 100%; }
+      .modal-grid { grid-template-columns: 1fr; }
+      .table-scroll { max-height: 55vh; }
+    }
+  </style>
 </head>
 <body>
 
@@ -27,116 +183,309 @@
   </div>
 </nav>
 
-<div class="hero" style="padding:2rem 1.5rem">
+<div class="hero" style="padding:1.75rem 1.5rem">
   <h1>ค้นหาสมาชิก</h1>
   <p>ตรวจสอบรายชื่อสมาชิกชุมนุมศิษย์พยาบาลทหารอากาศ</p>
 </div>
 
 <div class="section">
-  <div class="search-box">
-    <input type="text" id="search-input" placeholder="ค้นหาชื่อ / นามสกุล / เลขที่สมาชิก..." />
-    <select id="filter-gen">
-      <option value="">ทุกรุ่น</option>
-    </select>
-    <select id="filter-type">
+
+  <!-- Search bar -->
+  <div class="search-bar">
+    <input type="text" id="s-name" placeholder="ค้นหาชื่อ / นามสกุล" />
+    <select id="s-gen"><option value="">ทุกรุ่น</option></select>
+    <select id="s-type">
       <option value="">ทุกประเภท</option>
       <option value="สามัญ">สามัญ</option>
       <option value="สมทบ">สมทบ</option>
+      <option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
     </select>
-    <button class="btn btn-primary" onclick="doSearch(1)">ค้นหา</button>
+    <button class="btn btn-primary" onclick="doSearch()">ค้นหา</button>
   </div>
 
-  <div id="result-count" style="margin-bottom:0.75rem;font-size:0.88rem;color:var(--text-muted)"></div>
+  <!-- Result meta -->
+  <div class="result-meta">
+    <span id="result-count"></span>
+    <span id="admin-label"></span>
+  </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>เลขที่</th>
-          <th>ยศ ชื่อ นามสกุล</th>
-          <th>รุ่น</th>
-          <th>ประเภท</th>
-          <th>สถาบัน</th>
-          <th>สถานะ</th>
-          <th>เบอร์โทร</th>
-        </tr>
-      </thead>
+  <!-- Table -->
+  <div class="table-scroll">
+    <table id="member-table">
+      <thead id="tbl-head"></thead>
       <tbody id="member-tbody">
-        <tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>
+        <tr><td colspan="8" class="loading"><div class="spinner"></div></td></tr>
       </tbody>
     </table>
   </div>
 
-  <div id="pagination"></div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <h3>แก้ไขข้อมูลสมาชิก</h3>
+    <input type="hidden" id="edit-id" />
+    <div class="modal-grid">
+      <div>
+        <label>ยศ</label>
+        <input type="text" id="edit-rank" />
+      </div>
+      <div>
+        <label>ชื่อ</label>
+        <input type="text" id="edit-fname" />
+      </div>
+      <div>
+        <label>นามสกุล</label>
+        <input type="text" id="edit-lname" />
+      </div>
+      <div>
+        <label>รุ่น</label>
+        <input type="text" id="edit-gen" />
+      </div>
+      <div>
+        <label>ประเภท</label>
+        <select id="edit-type">
+          <option value="สามัญ">สามัญ</option>
+          <option value="สมทบ">สมทบ</option>
+          <option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
+        </select>
+      </div>
+      <div>
+        <label>สถานะ</label>
+        <select id="edit-status">
+          <option value="มีชีวิต">มีชีวิต</option>
+          <option value="เสียชีวิต">เสียชีวิต</option>
+        </select>
+      </div>
+      <div class="full">
+        <label>สถานปฏิบัติงาน</label>
+        <input type="text" id="edit-workplace" />
+      </div>
+      <div>
+        <label>สถาบัน</label>
+        <input type="text" id="edit-inst" />
+      </div>
+      <div>
+        <label>เบอร์โทร</label>
+        <input type="text" id="edit-phone" />
+      </div>
+      <div class="full">
+        <label>ที่อยู่</label>
+        <textarea id="edit-addr" rows="2" style="resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()" style="background:#f3f4f6;color:#444">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEdit()">บันทึก</button>
+    </div>
+  </div>
 </div>
 
 <footer>
   <p>ชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.) &nbsp;|&nbsp; nurse.rtafnc@gmail.com</p>
 </footer>
 
+<!-- Google Identity Services (silent sign-in) -->
+<script src="https://accounts.google.com/gsi/client" async></script>
 <script src="js/config.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/api.js"></script>
 <script>
-let currentPage = 1;
-let totalResults = 0;
+// ── Auth ──────────────────────────────────────────────
+let isAdmin = false;
+let adminEmail = null;
 
+// ตรวจ sessionStorage จาก admin panel
+const sess = sessionStorage.getItem('adminUser');
+if (sess) {
+  try {
+    const u = JSON.parse(sess);
+    if (CONFIG.ADMIN_EMAILS.indexOf(u.email) >= 0) {
+      isAdmin = true;
+      adminEmail = u.email;
+    }
+  } catch(e) {}
+}
+
+// ── Build table header ─────────────────────────────────
+function buildHeader() {
+  const head = document.getElementById('tbl-head');
+  if (isAdmin) {
+    head.innerHTML = `<tr>
+      <th class="col-no">ลำดับ</th>
+      <th>ยศ ชื่อ นามสกุล</th>
+      <th class="col-gen">รุ่น</th>
+      <th class="col-type">ประเภท</th>
+      <th>สถานปฏิบัติงาน</th>
+      <th>สถาบัน</th>
+      <th>เบอร์โทร</th>
+      <th class="col-stat">สถานะ</th>
+      <th class="col-act">จัดการ</th>
+    </tr>`;
+    document.getElementById('admin-label').innerHTML = '<span class="admin-badge">ADMIN MODE</span>';
+  } else {
+    head.innerHTML = `<tr>
+      <th class="col-no">ลำดับ</th>
+      <th class="col-gen">รุ่น</th>
+      <th class="col-name">ยศ ชื่อ นามสกุล</th>
+      <th class="col-type">ประเภท</th>
+      <th class="col-stat">สถานะ</th>
+    </tr>`;
+  }
+}
+
+// ── Render rows ────────────────────────────────────────
+function renderRows(members) {
+  const tbody = document.getElementById('member-tbody');
+  if (!members || members.length === 0) {
+    const cols = isAdmin ? 9 : 5;
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูลสมาชิก</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = members.map((m, i) => {
+    const no     = escHtml(String(m.row_num || (i+1)));
+    const name   = escHtml([m.rank, m.fname, m.lname].filter(Boolean).join(' '));
+    const gen    = m.gen ? 'รุ่น ' + escHtml(String(m.gen)) : '-';
+    const type   = escHtml(m.type || '-');
+    const inst   = escHtml(m.institution || '-');
+    const work   = escHtml(m.workplace || '-');
+    const phone  = escHtml(m.phone || '-');
+    const statCls = m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red';
+    const stat   = `<span class="badge ${statCls}">${escHtml(m.status || '-')}</span>`;
+    const membId = escHtml(String(m.id || ''));
+
+    if (isAdmin) {
+      return `<tr>
+        <td class="col-no">${no}</td>
+        <td class="col-name">${name}</td>
+        <td class="col-gen" style="text-align:center">${gen}</td>
+        <td>${type}</td>
+        <td>${work}</td>
+        <td>${inst}</td>
+        <td>${phone}</td>
+        <td>${stat}</td>
+        <td class="col-act">
+          <button class="btn-edit" onclick="openEdit(${JSON.stringify(m)})">แก้ไข</button>
+          <button class="btn-del" onclick="delMember('${membId}','${name}')">ลบ</button>
+        </td>
+      </tr>`;
+    } else {
+      return `<tr>
+        <td class="col-no">${no}</td>
+        <td class="col-gen" style="text-align:center">${gen}</td>
+        <td class="col-name">${name}</td>
+        <td>${type}</td>
+        <td>${stat}</td>
+      </tr>`;
+    }
+  }).join('');
+}
+
+// ── Search ─────────────────────────────────────────────
+async function doSearch() {
+  const query = document.getElementById('s-name').value.trim();
+  const gen   = document.getElementById('s-gen').value;
+  const type  = document.getElementById('s-type').value;
+  const cols  = isAdmin ? 9 : 5;
+  const tbody = document.getElementById('member-tbody');
+  tbody.innerHTML = `<tr><td colspan="${cols}" class="loading"><div class="spinner"></div></td></tr>`;
+
+  try {
+    const data = await API.searchMembers(query, gen, type, 1, 100);
+    document.getElementById('result-count').textContent =
+      `พบ ${(data.total || 0).toLocaleString()} รายการ`;
+    renderRows(data.members);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:2rem;color:#dc2626">
+      ⚠️ ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน</td></tr>`;
+  }
+}
+
+// ── Load gen dropdown ──────────────────────────────────
 async function loadGenerations() {
   try {
     const data = await API.getStats();
-    const sel = document.getElementById('filter-gen');
-    for (let i = 1; i <= (data.generations || 0); i++) {
+    const sel = document.getElementById('s-gen');
+    const total = data.generations || 65;
+    for (let i = 1; i <= total; i++) {
       sel.innerHTML += `<option value="${i}">รุ่นที่ ${i}</option>`;
     }
   } catch(e) {}
 }
 
-async function doSearch(page = 1) {
-  currentPage = page;
-  const query = document.getElementById('search-input').value.trim();
-  const gen   = document.getElementById('filter-gen').value;
-  const type  = document.getElementById('filter-type').value;
-  const tbody = document.getElementById('member-tbody');
-  tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>';
+// ── Edit modal ─────────────────────────────────────────
+function openEdit(m) {
+  document.getElementById('edit-id').value       = m.id || '';
+  document.getElementById('edit-rank').value     = m.rank || '';
+  document.getElementById('edit-fname').value    = m.fname || '';
+  document.getElementById('edit-lname').value    = m.lname || '';
+  document.getElementById('edit-gen').value      = m.gen || '';
+  document.getElementById('edit-type').value     = m.type || 'สามัญ';
+  document.getElementById('edit-status').value   = m.status || 'มีชีวิต';
+  document.getElementById('edit-workplace').value= m.workplace || '';
+  document.getElementById('edit-inst').value     = m.institution || '';
+  document.getElementById('edit-phone').value    = m.phone || '';
+  document.getElementById('edit-addr').value     = m.address || '';
+  document.getElementById('edit-modal').classList.add('open');
+}
 
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+
+async function saveEdit() {
+  const id = document.getElementById('edit-id').value;
+  if (!id) return;
   try {
-    const data = await API.searchMembers(query, gen, type, page);
-    totalResults = data.total || 0;
-    document.getElementById('result-count').textContent =
-      `พบ ${totalResults.toLocaleString()} รายการ`;
-
-    if (!data.members || data.members.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูลสมาชิก</td></tr>';
-      document.getElementById('pagination').innerHTML = '';
-      return;
-    }
-
-    tbody.innerHTML = data.members.map(m => `
-      <tr>
-        <td><span class="badge badge-blue">${escHtml(m.member_id)}</span></td>
-        <td><strong>${escHtml(m.rank)} ${escHtml(m.firstname)} ${escHtml(m.lastname)}</strong></td>
-        <td>${escHtml(m.generation) ? 'รุ่นที่ ' + escHtml(String(m.generation)) : '-'}</td>
-        <td>${escHtml(m.type) || '-'}</td>
-        <td>${escHtml(m.institution) || '-'}</td>
-        <td><span class="badge ${m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red'}">${escHtml(m.status)}</span></td>
-        <td>${escHtml(m.phone) || '-'}</td>
-      </tr>
-    `).join('');
-
-    renderPagination('pagination', totalResults, currentPage, 'doSearch');
+    await API.updateMember({
+      email:       adminEmail,
+      id:          id,
+      rank:        document.getElementById('edit-rank').value,
+      fname:       document.getElementById('edit-fname').value,
+      lname:       document.getElementById('edit-lname').value,
+      gen:         document.getElementById('edit-gen').value,
+      type:        document.getElementById('edit-type').value,
+      status:      document.getElementById('edit-status').value,
+      workplace:   document.getElementById('edit-workplace').value,
+      institution: document.getElementById('edit-inst').value,
+      phone:       document.getElementById('edit-phone').value,
+      address:     document.getElementById('edit-addr').value,
+    });
+    closeModal();
+    showToast('บันทึกสำเร็จ', 'success');
+    doSearch();
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#dc2626">
-      ⚠️ ยังไม่ได้เชื่อมต่อ API — กรุณาตั้งค่า Apps Script ก่อน
-    </td></tr>`;
+    showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
   }
 }
 
-document.getElementById('search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doSearch(1);
+async function delMember(id, name) {
+  if (!confirm(`ลบสมาชิก "${name}" ใช่หรือไม่?`)) return;
+  try {
+    await API.deleteMember(id);
+    showToast('ลบสำเร็จ', 'success');
+    doSearch();
+  } catch(e) {
+    showToast('เกิดข้อผิดพลาด', 'error');
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
 });
 
+// Enter key search
+document.getElementById('s-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// ── Init ───────────────────────────────────────────────
+buildHeader();
 loadGenerations();
-doSearch(1);
+doSearch();
 </script>
 </body>
 </html>
