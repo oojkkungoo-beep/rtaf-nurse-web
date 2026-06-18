@@ -318,8 +318,18 @@
       </div>
       <div class="fg" style="grid-column:1/-1"><label>สถานปฏิบัติงาน</label><input type="text" id="em-workplace" /></div>
       <div class="fg"><label>สถาบัน</label><input type="text" id="em-inst" /></div>
-      <div class="fg"><label>เบอร์โทร</label><input type="text" id="em-phone" /></div>
-      <div class="fg" style="grid-column:1/-1"><label>ที่อยู่</label><textarea id="em-addr" rows="2"></textarea></div>
+      <div class="fg"><label>เบอร์มือถือ</label><input type="text" id="em-phone" /></div>
+      <div class="fg"><label>วันเกิด</label><input type="date" id="em-birthdate" /></div>
+      <div class="fg"><label>เบอร์ทำงาน</label><input type="text" id="em-work-phone" /></div>
+      <div class="fg"><label>เบอร์บ้าน</label><input type="text" id="em-home-phone" /></div>
+      <div class="fg"><label>สถานภาพสมรส</label>
+        <select id="em-marital">
+          <option value="">— ไม่ระบุ —</option>
+          <option>โสด</option><option>สมรส</option><option>หม้าย</option><option>หย่าร้าง</option>
+        </select>
+      </div>
+      <div class="fg"><label>ชื่อคู่สมรส</label><input type="text" id="em-spouse" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>ที่อยู่ติดต่อ</label><textarea id="em-addr" rows="2"></textarea></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-sm" onclick="closeModal('edit-member-modal')" style="background:#eee">ยกเลิก</button>

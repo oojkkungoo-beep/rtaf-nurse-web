@@ -10,19 +10,24 @@ const SUPER_ADMINS = ['oojkkungoo@gmail.com', 'nurse.rtafnc@gmail.com'];
 
 // Column indices (0-based) — Members sheet
 const COL = {
-  ROW:       0,
-  ID:        1,
-  RANK:      2,
-  FNAME:     3,
-  LNAME:     4,
-  GEN:       5,
-  TYPE:      6,
-  WORKPLACE: 7,
-  INST:      8,
-  ADDR:      9,
-  PHONE:     10,
-  STATUS:    11,
-  IMAGE:     12,
+  ROW:        0,
+  ID:         1,
+  RANK:       2,
+  FNAME:      3,
+  LNAME:      4,
+  GEN:        5,
+  TYPE:       6,
+  WORKPLACE:  7,
+  INST:       8,
+  ADDR:       9,
+  PHONE:      10,
+  STATUS:     11,
+  IMAGE:      12,
+  BIRTHDATE:  13,
+  WORK_PHONE: 14,
+  HOME_PHONE: 15,
+  MARITAL:    16,
+  SPOUSE:     17,
 };
 
 // Logbook columns (0-based) — new schema
@@ -168,6 +173,11 @@ function rowToMember(row) {
     phone:       row[COL.PHONE],
     status:      row[COL.STATUS],
     image:       row[COL.IMAGE],
+    birthdate:   row[COL.BIRTHDATE]  || '',
+    work_phone:  row[COL.WORK_PHONE] || '',
+    home_phone:  row[COL.HOME_PHONE] || '',
+    marital:     row[COL.MARITAL]    || '',
+    spouse:      row[COL.SPOUSE]     || '',
   };
 }
 
@@ -419,7 +429,10 @@ function getPending() {
   if (data.length <= 1) return { pending: [] };
   const pending = data.slice(1).filter(function(r) { return r[0]; }).map(function(r) {
     return { row_id: r[0], submitted_at: r[1], rank: r[2], firstname: r[3], lastname: r[4],
-             generation: r[5], member_type: r[6], institution: r[7], address: r[8], mobile_phone: r[9], email: r[10] };
+             generation: r[5], member_type: r[6], institution: r[7], address: r[8], mobile_phone: r[9],
+             email: r[10], workplace: r[11] || '', birthdate: r[12] || '',
+             work_phone: r[13] || '', home_phone: r[14] || '',
+             marital: r[15] || '', spouse: r[16] || '' };
   });
   return { pending: pending };
 }
@@ -514,10 +527,14 @@ function updateMember(data) {
   if (idx < 0) return { error: 'ไม่พบสมาชิก' };
   const rowNum = idx + 1;
   const fields = [
-    [COL.RANK, data.rank], [COL.FNAME, data.fname], [COL.LNAME, data.lname],
-    [COL.GEN, data.gen], [COL.TYPE, data.type], [COL.WORKPLACE, data.workplace],
-    [COL.INST, data.institution], [COL.ADDR, data.address],
-    [COL.PHONE, data.phone], [COL.STATUS, data.status],
+    [COL.RANK,       data.rank],       [COL.FNAME,      data.fname],
+    [COL.LNAME,      data.lname],      [COL.GEN,        data.gen],
+    [COL.TYPE,       data.type],       [COL.WORKPLACE,  data.workplace],
+    [COL.INST,       data.institution],[COL.ADDR,       data.address],
+    [COL.PHONE,      data.phone],      [COL.STATUS,     data.status],
+    [COL.BIRTHDATE,  data.birthdate],  [COL.WORK_PHONE, data.work_phone],
+    [COL.HOME_PHONE, data.home_phone], [COL.MARITAL,    data.marital],
+    [COL.SPOUSE,     data.spouse],
   ];
   fields.forEach(function(f) {
     if (f[1] !== undefined) sheet.getRange(rowNum, f[0] + 1).setValue(f[1]);
@@ -538,14 +555,44 @@ function deleteMember(id) {
 
 function submitRegistration(data) {
   const sheet = getOrCreateSheet(PENDING_SHEET,
-    ['id', 'timestamp', 'ยศ', 'ชื่อ', 'สกุล', 'รุ่น', 'ประเภท', 'สถาบัน', 'ที่อยู่', 'เบอร์โทร', 'อีเมล']);
+    ['id','timestamp','ยศ','ชื่อ','สกุล','รุ่น','ประเภท','สถาบัน','ที่อยู่ติดต่อ','เบอร์มือถือ',
+     'อีเมล','สถานปฏิบัติงาน','วันเกิด','เบอร์ทำงาน','เบอร์บ้าน','สถานภาพสมรส','ชื่อคู่สมรส']);
   const id = 'pending_' + Date.now();
-  sheet.appendRow([
-    id, new Date().toISOString(),
-    data.rank || '', data.fname || '', data.lname || '',
-    data.gen || '', data.type || 'สามัญ', data.institution || 'วพอ',
-    data.address || '', data.phone || '', data.email || '',
-  ]);
+
+  var rank   = data.rank        || '';
+  var fname  = data.firstname   || data.fname  || '';
+  var lname  = data.lastname    || data.lname  || '';
+  var gen    = data.generation  || data.gen    || '';
+  var type   = data.member_type || data.type   || 'สามัญ';
+  var inst   = data.institution || 'วพอ';
+  var phone  = data.mobile_phone|| data.phone  || '';
+  var email  = data.email       || '';
+  var work   = data.workplace   || '';
+  var bdate  = data.birthdate   || '';
+  var wphone = data.work_phone  || '';
+  var hphone = data.home_phone  || '';
+  var marital= data.marital_status || '';
+  var spouse = data.spouse_name || '';
+
+  // ต่อที่อยู่ติดต่อจากหลาย field
+  var addr = data.contact_address || '';
+  if (!addr) {
+    var ap = [
+      data.contact_tambon, data.contact_amphoe, data.contact_province, data.contact_postcode
+    ].filter(Boolean).join(' ');
+    var hp = [
+      data.home_no,
+      data.home_moo  ? 'หมู่ ' + data.home_moo  : '',
+      data.home_soi  ? 'ซ.'   + data.home_soi   : '',
+      data.home_road ? 'ถ.'   + data.home_road  : '',
+      data.home_tambon, data.home_amphoe, data.home_province, data.home_postcode
+    ].filter(Boolean).join(' ');
+    addr = (ap || hp).trim();
+  }
+
+  sheet.appendRow([id, new Date().toISOString(),
+    rank, fname, lname, gen, type, inst, addr, phone, email,
+    work, bdate, wphone, hphone, marital, spouse]);
   return { success: true, id: id };
 }
 
@@ -559,9 +606,23 @@ function approveMember(pendingId) {
   const p = rows[idx];
   const membersSheet = getSheet(MEMBERS_SHEET);
   const lastRow = membersSheet.getLastRow();
+  // Pending: id(0) ts(1) rank(2) fname(3) lname(4) gen(5) type(6) inst(7) addr(8) phone(9)
+  //          email(10) workplace(11) birthdate(12) work_phone(13) home_phone(14) marital(15) spouse(16)
+  // Members: ROW(0) ID(1) RANK(2) FNAME(3) LNAME(4) GEN(5) TYPE(6) WORKPLACE(7) INST(8) ADDR(9)
+  //          PHONE(10) STATUS(11) IMAGE(12) BIRTHDATE(13) WORK_PHONE(14) HOME_PHONE(15) MARITAL(16) SPOUSE(17)
   membersSheet.appendRow([
     lastRow, 'new-' + Date.now(),
-    p[2], p[3], p[4], p[5], p[6], '', p[7], p[8], p[9], 'มีชีวิต', '',
+    p[2], p[3], p[4], p[5], p[6],
+    p[11] || '',  // workplace
+    p[7],         // institution
+    p[8],         // address
+    p[9],         // mobile_phone
+    'มีชีวิต', '',
+    p[12] || '',  // birthdate
+    p[13] || '',  // work_phone
+    p[14] || '',  // home_phone
+    p[15] || '',  // marital
+    p[16] || '',  // spouse
   ]);
   pendingSheet.deleteRow(idx + 1);
   return { success: true };

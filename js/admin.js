@@ -276,19 +276,24 @@ function openMemberDetail(idx) {
     [m.rank, m.fname, m.lname].filter(Boolean).join(' ');
 
   const statCls = m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red';
-  document.getElementById('detail-info').innerHTML = `
-    <div><div class="detail-label">เลขที่สมาชิก</div><div class="detail-val">${escHtml(String(m.id || '-'))}</div></div>
-    <div><div class="detail-label">ลำดับ</div><div class="detail-val">${escHtml(String(m.row_num || '-'))}</div></div>
-    <div><div class="detail-label">รุ่น</div><div class="detail-val" style="color:var(--gold)">${escHtml(String(m.gen || '-'))}</div></div>
-    <div><div class="detail-label">ประเภท</div><div class="detail-val">${escHtml(m.type || '-')}</div></div>
-    <div class="full"><div class="detail-label">ยศ ชื่อ นามสกุล</div>
-      <div class="detail-val" style="font-size:1.05rem">${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}</div></div>
-    <div><div class="detail-label">สถานะ</div><div class="detail-val"><span class="badge ${statCls}">${escHtml(m.status || '-')}</span></div></div>
-    <div><div class="detail-label">เบอร์โทร</div><div class="detail-val">${escHtml(m.phone || '-')}</div></div>
-    <div class="full"><div class="detail-label">สถานปฏิบัติงาน</div><div class="detail-val">${escHtml(m.workplace || '-')}</div></div>
-    <div><div class="detail-label">สถาบัน</div><div class="detail-val">${escHtml(m.institution || '-')}</div></div>
-    <div class="full"><div class="detail-label">ที่อยู่</div><div class="detail-val" style="font-weight:400">${escHtml(m.address || '-')}</div></div>
-  `;
+  const di = (label, val, full=false) =>
+    `<div${full?' class="full"':''}><div class="detail-label">${label}</div><div class="detail-val">${val}</div></div>`;
+  document.getElementById('detail-info').innerHTML =
+    di('เลขที่สมาชิก', escHtml(String(m.id||'-'))) +
+    di('ลำดับ', escHtml(String(m.row_num||'-'))) +
+    di('รุ่น', `<span style="color:var(--gold)">${escHtml(String(m.gen||'-'))}</span>`) +
+    di('ประเภท', escHtml(m.type||'-')) +
+    di('ยศ ชื่อ นามสกุล', `<span style="font-size:1.05rem">${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}</span>`, true) +
+    di('สถานะ', `<span class="badge ${statCls}">${escHtml(m.status||'-')}</span>`) +
+    di('วันเกิด', escHtml(m.birthdate||'-')) +
+    di('เบอร์มือถือ', escHtml(m.phone||'-')) +
+    di('เบอร์ทำงาน', escHtml(m.work_phone||'-')) +
+    di('เบอร์บ้าน', escHtml(m.home_phone||'-')) +
+    di('สถานภาพสมรส', escHtml(m.marital||'-')) +
+    di('ชื่อคู่สมรส', escHtml(m.spouse||'-')) +
+    di('สถานปฏิบัติงาน', escHtml(m.workplace||'-'), true) +
+    di('สถาบัน', escHtml(m.institution||'-')) +
+    di('ที่อยู่', `<span style="font-weight:400">${escHtml(m.address||'-')}</span>`, true);
 
   document.getElementById('detail-logbook').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   document.getElementById('member-detail-modal').classList.add('open');
@@ -371,17 +376,22 @@ async function submitMemberLogbook() {
 function openMemberEdit(idx) {
   const m = _adminMemberCache[idx];
   if (!m) return;
-  document.getElementById('em-id').value        = m.id || '';
-  document.getElementById('em-rank').value      = m.rank || '';
-  document.getElementById('em-fname').value     = m.fname || '';
-  document.getElementById('em-lname').value     = m.lname || '';
-  document.getElementById('em-gen').value       = m.gen || '';
-  document.getElementById('em-type').value      = m.type || 'สามัญ';
-  document.getElementById('em-status').value    = m.status || 'มีชีวิต';
-  document.getElementById('em-workplace').value = m.workplace || '';
-  document.getElementById('em-inst').value      = m.institution || '';
-  document.getElementById('em-phone').value     = m.phone || '';
-  document.getElementById('em-addr').value      = m.address || '';
+  document.getElementById('em-id').value         = m.id || '';
+  document.getElementById('em-rank').value       = m.rank || '';
+  document.getElementById('em-fname').value      = m.fname || '';
+  document.getElementById('em-lname').value      = m.lname || '';
+  document.getElementById('em-gen').value        = m.gen || '';
+  document.getElementById('em-type').value       = m.type || 'สามัญ';
+  document.getElementById('em-status').value     = m.status || 'มีชีวิต';
+  document.getElementById('em-workplace').value  = m.workplace || '';
+  document.getElementById('em-inst').value       = m.institution || '';
+  document.getElementById('em-phone').value      = m.phone || '';
+  document.getElementById('em-birthdate').value  = m.birthdate || '';
+  document.getElementById('em-work-phone').value = m.work_phone || '';
+  document.getElementById('em-home-phone').value = m.home_phone || '';
+  document.getElementById('em-marital').value    = m.marital || '';
+  document.getElementById('em-spouse').value     = m.spouse || '';
+  document.getElementById('em-addr').value       = m.address || '';
   document.getElementById('edit-member-modal').classList.add('open');
 }
 
@@ -400,6 +410,11 @@ async function saveMemberEdit() {
       workplace:   document.getElementById('em-workplace').value,
       institution: document.getElementById('em-inst').value,
       phone:       document.getElementById('em-phone').value,
+      birthdate:   document.getElementById('em-birthdate').value,
+      work_phone:  document.getElementById('em-work-phone').value,
+      home_phone:  document.getElementById('em-home-phone').value,
+      marital:     document.getElementById('em-marital').value,
+      spouse:      document.getElementById('em-spouse').value,
       address:     document.getElementById('em-addr').value,
     });
     closeModal('edit-member-modal');

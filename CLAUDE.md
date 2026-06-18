@@ -30,7 +30,10 @@ apps-script/รหัส.js — Apps Script ทั้งหมด (doGet, doPost
 ```
 
 ## Sheets Schema (Members)
-COL: ROW(0) ID(1) RANK(2) FNAME(3) LNAME(4) GEN(5) TYPE(6) WORKPLACE(7) INST(8) ADDR(9) PHONE(10) STATUS(11) IMAGE(12)
+COL: ROW(0) ID(1) RANK(2) FNAME(3) LNAME(4) GEN(5) TYPE(6) WORKPLACE(7) INST(8) ADDR(9) PHONE(10) STATUS(11) IMAGE(12) BIRTHDATE(13) WORK_PHONE(14) HOME_PHONE(15) MARITAL(16) SPOUSE(17)
+
+## Sheets Schema (Pending)
+COL: id(0) timestamp(1) rank(2) fname(3) lname(4) gen(5) type(6) inst(7) addr(8) mobile_phone(9) email(10) workplace(11) birthdate(12) work_phone(13) home_phone(14) marital(15) spouse(16)
 
 ## Deploy Flow (Apps Script)
 ⚠️ ห้ามใช้ `clasp deploy --deploymentId` — URL จะเสีย
