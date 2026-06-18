@@ -43,9 +43,12 @@ const API = {
 
   updateMember: (data) => apiPost({ action: 'updateMember', email: getSessionEmail(), ...data }),
   deleteMember: (id)   => apiPost({ action: 'deleteMember', email: getSessionEmail(), id }),
-  approveMember:(id)   => apiPost({ action: 'approveMember',email: getSessionEmail(), id }),
+  approveMember:(id)   => apiPost({ action: 'approveMember', email: getSessionEmail(), id }),
+  rejectPending:(id)   => apiPost({ action: 'rejectPending', email: getSessionEmail(), id }),
 
-  addLogbook: (data) => apiPost({ action: 'addLogbook', email: getSessionEmail(), ...data }),
+  addLogbook:    (data)    => apiPost({ action: 'addLogbook',    email: getSessionEmail(), ...data }),
+  updateLogbook: (data)    => apiPost({ action: 'updateLogbook', email: getSessionEmail(), ...data }),
+  deleteLogbook: (row_num) => apiPost({ action: 'deleteLogbook', email: getSessionEmail(), row_num }),
   getLogbooks: (memberId = '', page = 1, limit = 9999) =>
     apiGet({ action: 'getLogbooks', memberId, page, limit }),
   searchLogbooks: (query = '', gen = '', welfare = '', page = 1, limit = 9999) =>

@@ -338,6 +338,59 @@
   </div>
 </div>
 
+<!-- ══ Modal: Logbook Detail ══ -->
+<div class="modal-overlay" id="logbook-detail-modal">
+  <div class="modal" style="max-width:500px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+      <h3 style="margin:0">รายละเอียด Logbook</h3>
+      <button onclick="closeModal('logbook-detail-modal')" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888;line-height:1">✕</button>
+    </div>
+    <div class="detail-grid">
+      <div><div class="detail-label">วันที่</div><div class="detail-val" id="ld-date"></div></div>
+      <div><div class="detail-label">รุ่น</div><div class="detail-val" id="ld-gen"></div></div>
+      <div class="full"><div class="detail-label">ยศ ชื่อ นามสกุล</div><div class="detail-val" id="ld-member"></div></div>
+      <div><div class="detail-label">สวัสดิการ</div><div class="detail-val" id="ld-welfare"></div></div>
+      <div><div class="detail-label">ผู้อนุมัติ</div><div class="detail-val" id="ld-approver"></div></div>
+      <div class="full"><div class="detail-label">กิจกรรม / รายละเอียด</div><div class="detail-val" style="font-weight:400" id="ld-activity"></div></div>
+      <div class="full"><div class="detail-label">ผู้บันทึก</div><div class="detail-val" style="font-weight:400;font-size:.85rem;color:#6b7280" id="ld-recorder"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm btn-danger" onclick="deleteCurrentLogbook()">🗑️ ลบ</button>
+      <button class="btn btn-sm" onclick="closeModal('logbook-detail-modal')" style="background:#eee">ปิด</button>
+      <button class="btn btn-primary btn-sm" onclick="openEditLogbook()">✏️ แก้ไข</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal: Edit Logbook ══ -->
+<div class="modal-overlay" id="logbook-edit-modal">
+  <div class="modal" style="max-width:460px">
+    <h3>แก้ไข Logbook</h3>
+    <input type="hidden" id="le-row-num" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+      <div class="fg"><label>วันที่ *</label><input type="date" id="le-date" /></div>
+      <div class="fg"><label>สวัสดิการ *</label>
+        <select id="le-welfare">
+          <option value="">— เลือก —</option>
+          <option>เงินช่วยเหลือฌาปนกิจ</option>
+          <option>ทุนการศึกษาบุตร</option>
+          <option>เยี่ยมไข้</option>
+          <option>กิจกรรมชมรม</option>
+          <option>อื่นๆ</option>
+        </select>
+      </div>
+      <div class="fg"><label>ผู้อนุมัติ *</label><input type="text" id="le-approver" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>กิจกรรม / รายละเอียด *</label>
+        <textarea id="le-activity" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('logbook-edit-modal')" style="background:#eee">ยกเลิก</button>
+      <button class="btn btn-primary btn-sm" onclick="saveLogbookEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Modal: Add Logbook (for specific member) ══ -->
 <div class="modal-overlay" id="logbook-member-modal">
   <div class="modal">

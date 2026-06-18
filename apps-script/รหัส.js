@@ -93,6 +93,9 @@ function doPost(e) {
       case 'approveMember':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = approveMember(data.id); break;
+      case 'rejectPending':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = rejectPending(data.id); break;
       case 'addLogbook':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = addLogbook(data); break;
@@ -111,6 +114,12 @@ function doPost(e) {
       case 'getAdmins':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = getAdmins(); break;
+      case 'updateLogbook':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = updateLogbook(data); break;
+      case 'deleteLogbook':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = deleteLogbook(data.row_num); break;
       case 'addAdmin':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = addAdmin(data); break;
@@ -187,11 +196,12 @@ function isMemberRow(row) {
   return fname.length > 0 && lname.length > 0 && fname !== 'ชื่อ';
 }
 
-function rowToLogbook(r) {
+function rowToLogbook(r, rowNum) {
   // Detect old 6-column schema: r[5] empty means welfare was at r[2]
   var isOld = !r[5] && !r[6] && !r[7];
   if (isOld) {
     return {
+      row_num: rowNum || 0,
       timestamp: r[0], member_id: r[1],
       rank: '', fullname: '', gen: '',
       welfare:  r[2] || '', activity: r[3] || '',
@@ -199,6 +209,7 @@ function rowToLogbook(r) {
     };
   }
   return {
+    row_num:   rowNum || 0,
     timestamp: r[LCOL.TS],
     member_id: r[LCOL.MID],
     rank:      r[LCOL.RANK]     || '',
@@ -253,18 +264,10 @@ function getStats() {
     .map(function(k) { return { inst: k, count: instCount[k] }; })
     .sort(function(a, b) { return b.count - a.count; });
 
-  var pendingCount = 0;
-  var pendingSheet = getSheet(PENDING_SHEET);
-  if (pendingSheet) {
-    var pData = pendingSheet.getDataRange().getValues();
-    pendingCount = Math.max(0, pData.length - 1);
-  }
-
   return {
     total: total, active: active, deceased: deceased,
     generations: genList.length,
     by_type: by_type, by_inst: by_inst, by_gen: genList,
-    pending_count: pendingCount
   };
 }
 
@@ -385,12 +388,12 @@ function getLogbooks(params) {
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { logbooks: [], total: 0 };
 
-  let rows = data.slice(1).filter(function(r) { return r[0]; });
-  if (memberId) rows = rows.filter(function(r) { return String(r[LCOL.MID]) === memberId; });
+  let indexed = data.slice(1).map(function(r, i) { return { r: r, rowNum: i + 2 }; }).filter(function(x) { return x.r[0]; });
+  if (memberId) indexed = indexed.filter(function(x) { return String(x.r[LCOL.MID]) === memberId; });
 
-  const total = rows.length;
+  const total = indexed.length;
   const start = (page - 1) * limit;
-  return { logbooks: rows.slice(start, start + limit).map(rowToLogbook), total: total };
+  return { logbooks: indexed.slice(start, start + limit).map(function(x) { return rowToLogbook(x.r, x.rowNum); }), total: total };
 }
 
 function searchLogbooks(params) {
@@ -406,8 +409,9 @@ function searchLogbooks(params) {
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { logbooks: [], total: 0 };
 
-  let rows = data.slice(1).filter(function(r) { return r[0]; });
-  rows = rows.filter(function(r) {
+  let indexed = data.slice(1).map(function(r, i) { return { r: r, rowNum: i + 2 }; }).filter(function(x) { return x.r[0]; });
+  indexed = indexed.filter(function(x) {
+    const r = x.r;
     if (query) {
       const s = [r[LCOL.NAME], r[LCOL.MID]].join(' ').toLowerCase();
       if (s.indexOf(query) < 0) return false;
@@ -417,9 +421,9 @@ function searchLogbooks(params) {
     return true;
   });
 
-  const total = rows.length;
+  const total = indexed.length;
   const start = (page - 1) * limit;
-  return { logbooks: rows.slice(start, start + limit).map(rowToLogbook), total: total };
+  return { logbooks: indexed.slice(start, start + limit).map(function(x) { return rowToLogbook(x.r, x.rowNum); }), total: total };
 }
 
 function getPending() {
@@ -645,6 +649,38 @@ function addLogbook(data) {
     data.approver  || '',
     data.email     || '',  // recorder = admin email
   ]);
+  return { success: true };
+}
+
+function rejectPending(pendingId) {
+  const sheet = getSheet(PENDING_SHEET);
+  if (!sheet) return { error: 'ไม่พบ Pending sheet' };
+  const rows = sheet.getDataRange().getValues();
+  const idx = rows.findIndex(function(r) { return String(r[0]) === String(pendingId); });
+  if (idx < 0) return { error: 'ไม่พบคำขอ' };
+  sheet.deleteRow(idx + 1);
+  return { success: true };
+}
+
+function deleteLogbook(rowNum) {
+  const sheet = getSheet(LOGBOOK_SHEET);
+  if (!sheet) return { error: 'ไม่พบ Logbook sheet' };
+  const n = parseInt(rowNum, 10);
+  if (!n || n < 2) return { error: 'row_num ไม่ถูกต้อง' };
+  sheet.deleteRow(n);
+  return { success: true };
+}
+
+function updateLogbook(data) {
+  const sheet = getSheet(LOGBOOK_SHEET);
+  if (!sheet) return { error: 'ไม่พบ Logbook sheet' };
+  const n = parseInt(data.row_num, 10);
+  if (!n || n < 2) return { error: 'row_num ไม่ถูกต้อง' };
+  // update cols: Timestamp(1) Welfare(6) Activity(7) Approver(8) — 1-based
+  sheet.getRange(n, LCOL.TS       + 1).setValue(data.date     || '');
+  sheet.getRange(n, LCOL.WELFARE  + 1).setValue(data.welfare  || '');
+  sheet.getRange(n, LCOL.ACTIVITY + 1).setValue(data.activity || '');
+  sheet.getRange(n, LCOL.APPROVER + 1).setValue(data.approver || '');
   return { success: true };
 }
 

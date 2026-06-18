@@ -181,7 +181,7 @@ async function approveMember(id) {
 async function rejectMember(id) {
   if (!confirm('ยืนยันปฏิเสธใบสมัครนี้?')) return;
   try {
-    await API.deleteMember(id);
+    await API.rejectPending(id);
     showToast('ปฏิเสธใบสมัครแล้ว', 'success');
     loadPending();
   } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
@@ -437,6 +437,7 @@ async function deleteMember(id, name) {
 
 // ── Logbook (all) ─────────────────────────────────────────────────────────────
 let _lbSearchTimer = null;
+let _logbookCache = [];
 
 async function loadLogbookOptions() {
   try {
@@ -469,8 +470,9 @@ async function searchLogbooks() {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูล</td></tr>';
       return;
     }
+    _logbookCache = logs;
     tbody.innerHTML = logs.map((l, i) => `
-      <tr style="background:${i%2?'#f8f9fc':'#fff'}">
+      <tr style="background:${i%2?'#f8f9fc':'#fff'};cursor:pointer" onclick="openLogbookDetail(${i})">
         <td>${escHtml(String(l.timestamp||'').split('T')[0])}</td>
         <td>${escHtml(l.fullname || l.member_id || '-')}</td>
         <td style="text-align:center">${escHtml(String(l.gen || '-'))}</td>
@@ -481,6 +483,60 @@ async function searchLogbooks() {
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="6" style="color:#dc2626;text-align:center;padding:1rem">ยังไม่ได้เชื่อมต่อ API</td></tr>';
   }
+}
+
+function openLogbookDetail(idx) {
+  const l = _logbookCache[idx];
+  if (!l) return;
+  _currentLogbook = l;
+  document.getElementById('ld-date').textContent     = escHtml(String(l.timestamp||'').split('T')[0] || '-');
+  document.getElementById('ld-member').textContent   = escHtml(l.fullname || l.member_id || '-');
+  document.getElementById('ld-gen').textContent      = escHtml(String(l.gen || '-'));
+  document.getElementById('ld-welfare').textContent  = escHtml(l.welfare || '-');
+  document.getElementById('ld-activity').textContent = escHtml(l.activity || '-');
+  document.getElementById('ld-approver').textContent = escHtml(l.approver || '-');
+  document.getElementById('ld-recorder').textContent = escHtml(l.recorder || '-');
+  document.getElementById('logbook-detail-modal').classList.add('open');
+}
+
+let _currentLogbook = null;
+
+function openEditLogbook() {
+  if (!_currentLogbook) return;
+  const l = _currentLogbook;
+  document.getElementById('le-row-num').value  = l.row_num;
+  document.getElementById('le-date').value     = String(l.timestamp||'').split('T')[0];
+  document.getElementById('le-welfare').value  = l.welfare || '';
+  document.getElementById('le-activity').value = l.activity || '';
+  document.getElementById('le-approver').value = l.approver || '';
+  closeModal('logbook-detail-modal');
+  document.getElementById('logbook-edit-modal').classList.add('open');
+}
+
+async function saveLogbookEdit() {
+  const row_num  = document.getElementById('le-row-num').value;
+  const date     = document.getElementById('le-date').value;
+  const welfare  = document.getElementById('le-welfare').value;
+  const activity = document.getElementById('le-activity').value.trim();
+  const approver = document.getElementById('le-approver').value.trim();
+  if (!welfare || !activity || !approver) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return; }
+  try {
+    await API.updateLogbook({ row_num, date, welfare, activity, approver });
+    showToast('แก้ไข Logbook เรียบร้อยแล้ว', 'success');
+    closeModal('logbook-edit-modal');
+    searchLogbooks();
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+async function deleteCurrentLogbook() {
+  if (!_currentLogbook) return;
+  if (!confirm('ยืนยันลบ Logbook รายการนี้?')) return;
+  try {
+    await API.deleteLogbook(_currentLogbook.row_num);
+    showToast('ลบ Logbook เรียบร้อยแล้ว', 'success');
+    closeModal('logbook-detail-modal');
+    searchLogbooks();
+  } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
 }
 
 function openStandaloneLogbookModal() {
