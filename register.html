@@ -46,20 +46,12 @@
       <div class="form-section-title">ข้อมูลส่วนตัว</div>
       <div class="form-row">
         <div class="form-group">
-          <label>ยศ <span style="color:#dc2626">*</span></label>
-          <select name="rank" required>
-            <option value="">— เลือก —</option>
-            <option>พลอากาศเอก</option><option>พลอากาศโท</option><option>พลอากาศตรี</option>
-            <option>นาวาอากาศเอก</option><option>นาวาอากาศโท</option><option>นาวาอากาศตรี</option>
-            <option>เรืออากาศเอก</option><option>เรืออากาศโท</option><option>เรืออากาศตรี</option>
-            <option>พันเอก</option><option>พันโท</option><option>พันตรี</option>
-            <option>ร้อยเอก</option><option>ร้อยโท</option><option>ร้อยตรี</option>
-            <option>นาย</option><option>นาง</option><option>นางสาว</option>
-          </select>
+          <label>คำนำหน้า (กรอกตัวย่อ) <span style="color:#dc2626">*</span></label>
+          <input type="text" name="rank" placeholder="เช่น ร.อ., น.ส., นาง" required />
         </div>
         <div class="form-group">
           <label>รุ่นที่ <span style="color:#dc2626">*</span></label>
-          <input type="number" name="generation" min="1" placeholder="เช่น 34" required />
+          <input type="text" name="generation" placeholder="เช่น 34, บนอ.01" required />
         </div>
       </div>
       <div class="form-row">
@@ -81,8 +73,11 @@
           <label>สถาบันการศึกษา <span style="color:#dc2626">*</span></label>
           <select name="institution" required>
             <option value="">— เลือก —</option>
-            <option value="วพอ">รร.จอ. (วพอ.)</option>
-            <option value="อื่น">รร.จอ. (อื่นๆ)</option>
+            <option value="วพอ.">วพอ.</option>
+            <option value="วพอ.(เกาหลี)">วพอ.(เกาหลี)</option>
+            <option value="รร.จอ.(วพอ.)">รร.จอ.(วพอ.)</option>
+            <option value="รร.จอ.(อื่นๆ)">รร.จอ.(อื่นๆ)</option>
+            <option value="อื่นๆ">อื่นๆ</option>
           </select>
         </div>
       </div>
@@ -101,51 +96,6 @@
         <input type="tel" name="work_phone" placeholder="02-xxx-xxxx" />
       </div>
 
-      <div class="form-section-title">ที่อยู่บ้าน</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>บ้านเลขที่ <span style="color:#dc2626">*</span></label>
-          <input type="text" name="home_no" placeholder="บ้านเลขที่" required />
-        </div>
-        <div class="form-group">
-          <label>หมู่ที่</label>
-          <input type="text" name="home_moo" placeholder="หมู่ที่" />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>ซอย</label>
-          <input type="text" name="home_soi" placeholder="ซอย" />
-        </div>
-        <div class="form-group">
-          <label>ถนน</label>
-          <input type="text" name="home_road" placeholder="ถนน" />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>ตำบล / แขวง <span style="color:#dc2626">*</span></label>
-          <input type="text" name="home_tambon" placeholder="ตำบล / แขวง" required />
-        </div>
-        <div class="form-group">
-          <label>อำเภอ / เขต <span style="color:#dc2626">*</span></label>
-          <input type="text" name="home_amphoe" placeholder="อำเภอ / เขต" required />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>จังหวัด <span style="color:#dc2626">*</span></label>
-          <input type="text" name="home_province" placeholder="จังหวัด" required />
-        </div>
-        <div class="form-group">
-          <label>รหัสไปรษณีย์ <span style="color:#dc2626">*</span></label>
-          <input type="text" name="home_postcode" placeholder="10200" maxlength="5" required />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>เบอร์โทรศัพท์บ้าน</label>
-        <input type="tel" name="home_phone" placeholder="02-xxx-xxxx" />
-      </div>
 
       <div class="form-section-title">สถานภาพ</div>
       <div class="form-row">
@@ -199,8 +149,11 @@
         <label>ประเภท <span style="color:#dc2626">*</span></label>
         <select name="member_type" required>
           <option value="">— เลือก —</option>
+          <option value="วิสามัญ">วิสามัญ</option>
           <option value="สามัญ">สามัญ</option>
           <option value="สมทบ">สมทบ</option>
+          <option value="กิตติมศักดิ์">กิตติมศักดิ์</option>
+          <option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
         </select>
         <span class="hint">สมาชิกสามัญ — บุคลากรพยาบาลกองทัพอากาศ / สมทบ — บุคคลทั่วไปที่เกี่ยวข้อง</span>
       </div>
