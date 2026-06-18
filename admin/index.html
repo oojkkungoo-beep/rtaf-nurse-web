@@ -9,34 +9,73 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/style.css" />
   <style>
-    .admin-layout { display: flex; min-height: calc(100vh - 60px); }
-    .sidebar {
-      width: 220px; background: var(--navy); color: white;
-      padding: 1.5rem 0; flex-shrink: 0;
+    /* ── Layout ── */
+    .admin-layout { display:flex; min-height:calc(100vh - 60px); }
+    .sidebar { width:220px; background:var(--navy); color:white; padding:1.5rem 0; flex-shrink:0; }
+    .sidebar-title { padding:0 1.25rem 1rem; font-size:.75rem; color:#8899bb; text-transform:uppercase; letter-spacing:1px; }
+    .sidebar a { display:block; padding:.7rem 1.25rem; color:#ccd; text-decoration:none; font-size:.9rem; transition:all .2s; border-left:3px solid transparent; }
+    .sidebar a:hover, .sidebar a.active { background:rgba(255,255,255,.1); color:white; border-left-color:var(--gold); }
+    .sidebar .divider { border-top:1px solid rgba(255,255,255,.1); margin:.75rem 0; }
+    .main-content { flex:1; padding:2rem; overflow:auto; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    /* ── User chip ── */
+    .user-chip { display:flex; align-items:center; gap:.5rem; padding:.75rem 1.25rem; background:rgba(255,255,255,.1); margin:0 .75rem 1rem; border-radius:8px; }
+    .user-chip img { width:32px; height:32px; border-radius:50%; }
+    .user-chip span { font-size:.82rem; color:#ccd; }
+
+    /* ── Stat cards (dashboard) ── */
+    .stat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .stat-card { background:white; border-radius:12px; padding:1.25rem; box-shadow:0 2px 8px rgba(0,0,0,.07); border-top:4px solid #ddd; }
+    .stat-card .val { font-size:2rem; font-weight:700; }
+    .stat-card .lbl { font-size:.83rem; color:var(--text-muted); margin-top:.15rem; }
+    .type-bar { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .type-pill { padding:.35rem .9rem; border-radius:20px; font-size:.82rem; font-weight:600; background:#eef2ff; color:#3730a3; }
+
+    /* ── Modal overlay ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:500; align-items:center; justify-content:center; padding:1rem; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:white; border-radius:12px; padding:2rem; width:100%; max-width:540px; max-height:90vh; overflow-y:auto; }
+    .modal.wide { max-width:760px; }
+    .modal h3 { color:var(--navy); margin-bottom:1.25rem; }
+    .modal-footer { display:flex; gap:.75rem; justify-content:flex-end; margin-top:1.25rem; }
+
+    /* ── Member detail modal ── */
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem 1.2rem; margin-bottom:1.25rem; }
+    .detail-grid .full { grid-column:1/-1; }
+    .detail-label { font-size:.75rem; color:#888; margin-bottom:.1rem; }
+    .detail-val { font-size:.93rem; color:#1a2a5e; font-weight:600; }
+
+    /* ── Member table ── */
+    .admin-member-row { cursor:pointer; }
+    .admin-member-row:nth-child(even) { background:#f8f9fc; }
+    .admin-member-row:hover { background:#dbeafe; }
+
+    /* ── Logbook section inside detail ── */
+    .logbook-section { border-top:1px solid #e5e7eb; margin-top:1.25rem; padding-top:1rem; }
+    .logbook-section .lbk-row { padding:.5rem .75rem; border-bottom:1px solid #f0f0f5; font-size:.84rem; display:grid; grid-template-columns:90px 1fr 80px; gap:.5rem; align-items:start; }
+    .logbook-section .lbk-row:nth-child(even) { background:#f8f9fc; }
+
+    /* ── Form helpers ── */
+    .fg { margin-bottom:.75rem; }
+    .fg label { display:block; font-size:.82rem; color:#555; margin-bottom:.2rem; }
+    .fg input, .fg select, .fg textarea {
+      width:100%; padding:.45rem .7rem; border:1.5px solid #d1d5db; border-radius:7px;
+      font-family:inherit; font-size:.9rem; box-sizing:border-box;
     }
-    .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; color: #8899bb; text-transform: uppercase; letter-spacing: 1px; }
-    .sidebar a {
-      display: block; padding: 0.7rem 1.25rem; color: #ccd; text-decoration: none;
-      font-size: 0.9rem; transition: all 0.2s; border-left: 3px solid transparent;
-    }
-    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--gold); }
-    .sidebar .divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 0.75rem 0; }
-    .main-content { flex: 1; padding: 2rem; overflow: auto; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5); z-index: 500; align-items: center; justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal { background: white; border-radius: 12px; padding: 2rem; max-width: 540px; width: 90%; max-height: 90vh; overflow-y: auto; }
-    .modal h3 { color: var(--navy); margin-bottom: 1.25rem; }
-    .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
-    .user-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: rgba(255,255,255,0.1); margin: 0 0.75rem 1rem; border-radius: 8px; }
-    .user-chip img { width: 32px; height: 32px; border-radius: 50%; }
-    .user-chip span { font-size: 0.82rem; color: #ccd; }
-    .admin-member-row:nth-child(even) { background: #f8f9fc; }
-    .admin-member-row:hover { background: #eef2ff; }
+    .fg textarea { resize:vertical; }
+    .fg input[readonly], .fg input[disabled] { background:#f3f4f6; color:#6b7280; }
+
+    /* ── Scroll table ── */
+    .stbl-wrap { overflow-x:auto; overflow-y:auto; max-height:68vh; border:1px solid #e5e7eb; border-radius:10px; }
+    .stbl-wrap table { min-width:700px; border-radius:0; border:none; }
+    .stbl-wrap thead th { position:sticky; top:0; z-index:2; background:var(--navy); color:#fff; white-space:nowrap; padding:.6rem .8rem; font-size:.8rem; }
+    .stbl-wrap tbody td { padding:.5rem .8rem; font-size:.85rem; border-bottom:1px solid #f0f0f5; }
+
+    /* ── Admin mgmt ── */
+    .admin-list-row { display:flex; align-items:center; gap:.75rem; padding:.6rem .9rem; border-bottom:1px solid #f0f0f5; font-size:.9rem; }
+    .admin-list-row:nth-child(even) { background:#f8f9fc; }
   </style>
 </head>
 <body>
@@ -61,74 +100,79 @@
   </a>
   <div class="nav-links">
     <a href="../index.html">← กลับหน้าหลัก</a>
-    <button class="btn btn-sm" onclick="signOut()" style="color:white;background:rgba(255,255,255,0.15)">ออกจากระบบ</button>
+    <button class="btn btn-sm" onclick="signOut()" style="color:white;background:rgba(255,255,255,.15)">ออกจากระบบ</button>
   </div>
 </nav>
 
 <div class="admin-layout">
+
+  <!-- Sidebar -->
   <div class="sidebar">
     <div id="user-chip" class="user-chip" style="display:none">
       <img id="user-avatar" src="" alt="" />
-      <div><div id="user-name" style="font-size:0.85rem;color:white"></div><span>Admin</span></div>
+      <div><div id="user-name" style="font-size:.85rem;color:white"></div><span>Admin</span></div>
     </div>
     <div class="sidebar-title">เมนู</div>
     <a href="#" class="active" onclick="showTab('dashboard',this)">📊 ภาพรวม</a>
-    <a href="#" onclick="showTab('pending',this)">📋 ใบสมัครใหม่ <span id="pending-badge"></span></a>
     <a href="#" onclick="showTab('members',this)">👥 จัดการสมาชิก</a>
     <a href="#" onclick="showTab('logbook',this)">📒 Logbook สวัสดิการ</a>
     <div class="divider"></div>
     <a href="#" onclick="showTab('news',this)">📢 จัดการข่าว</a>
+    <div class="divider"></div>
+    <a href="#" onclick="showTab('adminmgmt',this)">⚙️ การจัดการ Admin</a>
   </div>
 
   <div class="main-content">
 
-    <!-- Dashboard -->
+    <!-- ══ Dashboard ══ -->
     <div class="tab-content active" id="tab-dashboard">
       <div class="section-title">ภาพรวมระบบ</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:2rem" id="stat-cards">
+
+      <!-- Stat cards -->
+      <div class="stat-grid" id="stat-cards">
         <div class="loading"><div class="spinner"></div></div>
       </div>
-    </div>
 
-    <!-- Pending -->
-    <div class="tab-content" id="tab-pending">
-      <div class="section-title">ใบสมัครรอการอนุมัติ</div>
+      <!-- Type breakdown -->
+      <div class="type-bar" id="type-bar"></div>
+
+      <!-- Pending registrations -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div style="font-weight:700;color:var(--navy);font-size:1rem">ใบสมัครรอการอนุมัติ <span id="pending-badge" style="font-size:.8rem;color:#dc2626"></span></div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>วันที่สมัคร</th><th>ยศ ชื่อ</th><th>รุ่น</th><th>ประเภท</th><th>เบอร์มือถือ</th><th>การดำเนินการ</th></tr>
+            <tr><th>วันที่สมัคร</th><th>ยศ ชื่อ นามสกุล</th><th>รุ่น</th><th>ประเภท</th><th>เบอร์มือถือ</th><th>ดำเนินการ</th></tr>
           </thead>
           <tbody id="pending-tbody"><tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Members -->
+    <!-- ══ Members ══ -->
     <div class="tab-content" id="tab-members">
       <div class="section-title">จัดการสมาชิก</div>
-      <div class="search-box" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
-        <input type="text" id="admin-search" placeholder="ค้นหาชื่อ / นามสกุล" style="flex:2 1 160px;padding:0.5rem 0.8rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit" />
-        <select id="admin-s-gen" onchange="adminSearchMembers(1)" style="flex:1 1 100px;padding:0.5rem 0.7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
+        <input type="text" id="admin-search" placeholder="ค้นหาชื่อ / นามสกุล"
+          style="flex:2 1 160px;padding:.5rem .8rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit" />
+        <select id="admin-s-gen" onchange="adminSearchMembers(1)"
+          style="flex:1 1 100px;padding:.5rem .7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
           <option value="">ทุกรุ่น</option>
         </select>
-        <select id="admin-s-type" onchange="adminSearchMembers(1)" style="flex:1 1 110px;padding:0.5rem 0.7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
+        <select id="admin-s-type" onchange="adminSearchMembers(1)"
+          style="flex:1 1 110px;padding:.5rem .7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
           <option value="">ทุกประเภท</option>
         </select>
       </div>
       <div id="admin-result-count" style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem"></div>
-      <div style="overflow-x:auto;overflow-y:auto;max-height:68vh;border:1px solid #e5e7eb;border-radius:10px">
-        <table style="min-width:800px;border-radius:0;border:none">
+      <div class="stbl-wrap">
+        <table>
           <thead>
-            <tr style="position:sticky;top:0;z-index:2;background:var(--navy);color:#fff">
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">ลำดับ</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">รุ่น</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem;min-width:150px">ยศ ชื่อ นามสกุล</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">ประเภท</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem;min-width:120px">สถานปฏิบัติงาน</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">สถาบัน</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">เบอร์โทร</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">สถานะ</th>
-              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">จัดการ</th>
+            <tr>
+              <th>ลำดับ</th><th>รุ่น</th><th style="min-width:150px">ยศ ชื่อ นามสกุล</th>
+              <th>ประเภท</th><th style="min-width:120px">สถานปฏิบัติงาน</th>
+              <th>สถาบัน</th><th>เบอร์โทร</th><th>สถานะ</th><th>จัดการ</th>
             </tr>
           </thead>
           <tbody id="admin-member-tbody">
@@ -138,57 +182,45 @@
       </div>
     </div>
 
-    <!-- Modal: Edit Member -->
-    <div class="modal-overlay" id="edit-member-modal">
-      <div class="modal" style="max-width:560px">
-        <h3>แก้ไขข้อมูลสมาชิก</h3>
-        <input type="hidden" id="em-id" />
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ยศ</label><input type="text" id="em-rank" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">รุ่น</label><input type="text" id="em-gen" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ชื่อ</label><input type="text" id="em-fname" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">นามสกุล</label><input type="text" id="em-lname" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ประเภท</label>
-            <select id="em-type" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box">
-              <option value="สามัญ">สามัญ</option><option value="สมทบ">สมทบ</option><option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
-            </select>
-          </div>
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">สถานะ</label>
-            <select id="em-status" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box">
-              <option value="มีชีวิต">มีชีวิต</option><option value="เสียชีวิต">เสียชีวิต</option>
-            </select>
-          </div>
-          <div style="grid-column:1/-1"><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">สถานปฏิบัติงาน</label><input type="text" id="em-workplace" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">สถาบัน</label><input type="text" id="em-inst" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
-          <div><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">เบอร์โทร</label><input type="text" id="em-phone" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;box-sizing:border-box" /></div>
-          <div style="grid-column:1/-1"><label style="font-size:.82rem;color:#555;display:block;margin-bottom:.2rem">ที่อยู่</label><textarea id="em-addr" rows="2" style="width:100%;padding:.45rem .7rem;border:1.5px solid #d1d5db;border-radius:7px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea></div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-sm" onclick="closeModal('edit-member-modal')" style="background:#eee">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" onclick="saveMemberEdit()">บันทึก</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Logbook -->
+    <!-- ══ Logbook ══ -->
     <div class="tab-content" id="tab-logbook">
-      <div class="section-title">Logbook สวัสดิการ</div>
-      <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap">
-        <input type="text" id="logbook-member-id" placeholder="เลขที่สมาชิก" style="padding:0.5rem 0.8rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit" />
-        <button class="btn btn-primary btn-sm" onclick="loadLogbooks()">ดู Logbook</button>
-        <button class="btn btn-gold btn-sm" onclick="openLogbookModal()">+ บันทึกใหม่</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div class="section-title" style="margin-bottom:0">Logbook สวัสดิการทั้งหมด</div>
+        <button class="btn btn-gold btn-sm" onclick="openStandaloneLogbookModal()">+ บันทึกใหม่</button>
       </div>
-      <div class="table-wrap">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
+        <input type="text" id="lb-search" placeholder="ค้นหาชื่อ / เลขที่สมาชิก"
+          style="flex:2 1 160px;padding:.5rem .8rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit" />
+        <select id="lb-s-gen" onchange="searchLogbooks()"
+          style="flex:1 1 100px;padding:.5rem .7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
+          <option value="">ทุกรุ่น</option>
+        </select>
+        <select id="lb-s-welfare" onchange="searchLogbooks()"
+          style="flex:1 1 110px;padding:.5rem .7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
+          <option value="">ทุกสวัสดิการ</option>
+        </select>
+      </div>
+      <div id="lb-result-count" style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem"></div>
+      <div class="stbl-wrap">
         <table>
           <thead>
-            <tr><th>วันที่</th><th>เลขที่สมาชิก</th><th>สวัสดิการ</th><th>กิจกรรม</th><th>ผู้อนุมัติ</th><th>ผู้บันทึก</th></tr>
+            <tr>
+              <th style="min-width:80px">วันที่</th>
+              <th style="min-width:150px">ยศ ชื่อ นามสกุล</th>
+              <th>รุ่น</th>
+              <th>สวัสดิการ</th>
+              <th style="min-width:180px">กิจกรรม / รายละเอียด</th>
+              <th>ผู้อนุมัติ</th>
+            </tr>
           </thead>
-          <tbody id="logbook-tbody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">กรอกเลขที่สมาชิกเพื่อดู Logbook</td></tr></tbody>
+          <tbody id="logbook-tbody">
+            <tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr>
+          </tbody>
         </table>
       </div>
     </div>
 
-    <!-- News -->
+    <!-- ══ News ══ -->
     <div class="tab-content" id="tab-news">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
         <div class="section-title" style="margin-bottom:0">จัดการข่าวประชาสัมพันธ์</div>
@@ -202,49 +234,183 @@
       </div>
     </div>
 
+    <!-- ══ Admin Management ══ -->
+    <div class="tab-content" id="tab-adminmgmt">
+      <div class="section-title">การจัดการ Admin</div>
+      <div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:1.5rem">
+        <div style="padding:.75rem 1rem;background:#f8faff;border-bottom:1px solid #e5e7eb;font-weight:700;color:var(--navy);font-size:.9rem">
+          รายชื่อ Admin ปัจจุบัน
+        </div>
+        <div id="admin-list"><div class="loading" style="padding:1.5rem"><div class="spinner"></div></div></div>
+      </div>
+      <div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:1.5rem">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:1rem">เพิ่ม Admin ใหม่</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:.75rem;align-items:end">
+          <div class="fg" style="margin:0">
+            <label>Gmail *</label>
+            <input type="email" id="new-admin-email" placeholder="example@gmail.com" />
+          </div>
+          <div class="fg" style="margin:0">
+            <label>ชื่อ (ไม่บังคับ)</label>
+            <input type="text" id="new-admin-name" placeholder="ชื่อ Admin" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addAdmin()" style="white-space:nowrap">+ เพิ่ม Admin</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /admin-layout -->
+
+<!-- ══ Modal: Member Detail ══ -->
+<div class="modal-overlay" id="member-detail-modal">
+  <div class="modal wide">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+      <h3 style="margin:0" id="detail-title">ข้อมูลสมาชิก</h3>
+      <button onclick="closeModal('member-detail-modal')" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888;line-height:1">✕</button>
+    </div>
+
+    <!-- Member info -->
+    <div class="detail-grid" id="detail-info"></div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;gap:.6rem;margin-bottom:1rem">
+      <button class="btn btn-primary btn-sm" onclick="openEditFromDetail()">✏️ แก้ไขข้อมูล</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteFromDetail()">🗑️ ลบสมาชิก</button>
+    </div>
+
+    <!-- Logbook section -->
+    <div class="logbook-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div style="font-weight:700;color:var(--navy);font-size:.95rem">Logbook สวัสดิการ</div>
+        <button class="btn btn-gold btn-sm" onclick="openLogbookForMember()">+ เพิ่ม Logbook</button>
+      </div>
+      <div id="detail-logbook"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
   </div>
 </div>
 
-<!-- Modal: Logbook -->
-<div class="modal-overlay" id="logbook-modal">
+<!-- ══ Modal: Edit Member ══ -->
+<div class="modal-overlay" id="edit-member-modal">
+  <div class="modal" style="max-width:560px">
+    <h3>แก้ไขข้อมูลสมาชิก</h3>
+    <input type="hidden" id="em-id" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+      <div class="fg"><label>ยศ</label><input type="text" id="em-rank" /></div>
+      <div class="fg"><label>รุ่น</label><input type="text" id="em-gen" /></div>
+      <div class="fg"><label>ชื่อ</label><input type="text" id="em-fname" /></div>
+      <div class="fg"><label>นามสกุล</label><input type="text" id="em-lname" /></div>
+      <div class="fg"><label>ประเภท</label>
+        <select id="em-type">
+          <option value="สามัญ">สามัญ</option>
+          <option value="สมทบ">สมทบ</option>
+          <option value="ไม่เป็นสมาชิก">ไม่เป็นสมาชิก</option>
+        </select>
+      </div>
+      <div class="fg"><label>สถานะ</label>
+        <select id="em-status">
+          <option value="มีชีวิต">มีชีวิต</option>
+          <option value="เสียชีวิต">เสียชีวิต</option>
+        </select>
+      </div>
+      <div class="fg" style="grid-column:1/-1"><label>สถานปฏิบัติงาน</label><input type="text" id="em-workplace" /></div>
+      <div class="fg"><label>สถาบัน</label><input type="text" id="em-inst" /></div>
+      <div class="fg"><label>เบอร์โทร</label><input type="text" id="em-phone" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>ที่อยู่</label><textarea id="em-addr" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('edit-member-modal')" style="background:#eee">ยกเลิก</button>
+      <button class="btn btn-primary btn-sm" onclick="saveMemberEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal: Add Logbook (for specific member) ══ -->
+<div class="modal-overlay" id="logbook-member-modal">
   <div class="modal">
     <h3>บันทึก Logbook สวัสดิการ</h3>
-    <form id="logbook-form" onsubmit="submitLogbook(event)">
-      <div class="form-group"><label>เลขที่สมาชิก *</label><input type="text" name="member_id" required /></div>
-      <div class="form-group"><label>สวัสดิการ *</label>
-        <select name="welfare" required>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+      <div class="fg"><label>วันที่ *</label><input type="date" id="lm-date" /></div>
+      <div class="fg"><label>รุ่น</label><input type="text" id="lm-gen" readonly /></div>
+      <div class="fg" style="grid-column:1/-1"><label>ยศ ชื่อ นามสกุล</label><input type="text" id="lm-fullname" readonly /></div>
+      <input type="hidden" id="lm-member-id" />
+      <input type="hidden" id="lm-rank" />
+      <div class="fg"><label>สวัสดิการ *</label>
+        <select id="lm-welfare">
           <option value="">— เลือก —</option>
           <option>เงินช่วยเหลือฌาปนกิจ</option>
           <option>ทุนการศึกษาบุตร</option>
           <option>เยี่ยมไข้</option>
+          <option>กิจกรรมชมรม</option>
           <option>อื่นๆ</option>
         </select>
       </div>
-      <div class="form-group"><label>กิจกรรม / รายละเอียด *</label><textarea name="activity" rows="3" required style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
-      <div class="form-group"><label>ผู้อนุมัติ *</label><input type="text" name="approver" required /></div>
+      <div class="fg"><label>ผู้อนุมัติ *</label><input type="text" id="lm-approver" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>กิจกรรม / รายละเอียด *</label>
+        <textarea id="lm-activity" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeModal('logbook-member-modal')" style="background:#eee">ยกเลิก</button>
+      <button class="btn btn-primary btn-sm" onclick="submitMemberLogbook()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal: Standalone Logbook ══ -->
+<div class="modal-overlay" id="logbook-standalone-modal">
+  <div class="modal">
+    <h3>บันทึก Logbook สวัสดิการ</h3>
+    <form id="logbook-form" onsubmit="submitStandaloneLogbook(event)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+        <div class="fg"><label>วันที่ *</label><input type="date" name="date" required /></div>
+        <div class="fg"><label>เลขที่สมาชิก *</label><input type="text" name="memberId" required /></div>
+        <div class="fg"><label>ยศ</label><input type="text" name="rank" /></div>
+        <div class="fg"><label>รุ่น</label><input type="text" name="gen" /></div>
+        <div class="fg" style="grid-column:1/-1"><label>ชื่อ-นามสกุล</label><input type="text" name="fullname" /></div>
+        <div class="fg"><label>สวัสดิการ *</label>
+          <select name="welfare" required>
+            <option value="">— เลือก —</option>
+            <option>เงินช่วยเหลือฌาปนกิจ</option>
+            <option>ทุนการศึกษาบุตร</option>
+            <option>เยี่ยมไข้</option>
+            <option>กิจกรรมชมรม</option>
+            <option>อื่นๆ</option>
+          </select>
+        </div>
+        <div class="fg"><label>ผู้อนุมัติ *</label><input type="text" name="approver" required /></div>
+        <div class="fg" style="grid-column:1/-1"><label>กิจกรรม / รายละเอียด *</label>
+          <textarea name="activity" rows="3" required></textarea>
+        </div>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-sm" onclick="closeModal('logbook-modal')" style="background:#eee">ยกเลิก</button>
+        <button type="button" class="btn btn-sm" onclick="closeModal('logbook-standalone-modal')" style="background:#eee">ยกเลิก</button>
         <button type="submit" class="btn btn-primary btn-sm">บันทึก</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Modal: News -->
+<!-- ══ Modal: News ══ -->
 <div class="modal-overlay" id="news-modal">
   <div class="modal">
     <h3 id="news-modal-title">เพิ่มข่าวประชาสัมพันธ์</h3>
     <form id="news-form" onsubmit="submitNews(event)">
       <input type="hidden" name="news_id" />
-      <div class="form-group"><label>หมวดหมู่</label>
+      <div class="fg"><label>หมวดหมู่</label>
         <select name="category">
-          <option>ประชาสัมพันธ์</option><option>กิจกรรม</option><option>สวัสดิการ</option><option>วิชาการ</option><option>ทั่วไป</option>
+          <option>ประชาสัมพันธ์</option><option>กิจกรรม</option>
+          <option>สวัสดิการ</option><option>วิชาการ</option><option>ทั่วไป</option>
         </select>
       </div>
-      <div class="form-group"><label>วันที่</label><input type="date" name="date" /></div>
-      <div class="form-group"><label>หัวข้อข่าว *</label><input type="text" name="title" required /></div>
-      <div class="form-group"><label>สรุปข่าว *</label><textarea name="summary" rows="3" required style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
-      <div class="form-group"><label>เนื้อหาเต็ม (ไม่บังคับ)</label><textarea name="content" rows="4" style="padding:0.55rem 0.9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea></div>
+      <div class="fg"><label>วันที่</label><input type="date" name="date" /></div>
+      <div class="fg"><label>หัวข้อข่าว *</label><input type="text" name="title" required /></div>
+      <div class="fg"><label>สรุปข่าว *</label>
+        <textarea name="summary" rows="3" required style="padding:.55rem .9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea>
+      </div>
+      <div class="fg"><label>เนื้อหาเต็ม (ไม่บังคับ)</label>
+        <textarea name="content" rows="4" style="padding:.55rem .9rem;border:2px solid #dde3f0;border-radius:8px;font-family:inherit;resize:vertical"></textarea>
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm" onclick="closeModal('news-modal')" style="background:#eee">ยกเลิก</button>
         <button type="submit" class="btn btn-primary btn-sm">บันทึก</button>

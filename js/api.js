@@ -41,8 +41,18 @@ const API = {
   approveMember: (id) => apiPost({ action: 'approveMember', email: currentUser?.email, id }),
 
   addLogbook: (data) => apiPost({ action: 'addLogbook', email: currentUser?.email, ...data }),
-  getLogbooks: (memberId = '', page = 1) =>
-    apiGet({ action: 'getLogbooks', memberId, page, limit: CONFIG.ITEMS_PER_PAGE }),
+  getLogbooks: (memberId = '', page = 1, limit = 9999) =>
+    apiGet({ action: 'getLogbooks', memberId, page, limit }),
+  searchLogbooks: (query = '', gen = '', welfare = '', page = 1, limit = 9999) =>
+    apiGet({ action: 'searchLogbooks', query, gen, welfare, page, limit }),
+  getLogbookOptions: () => apiGet({ action: 'getLogbookOptions' }),
+
   getPendingRegistrations: () =>
     apiGet({ action: 'getPending', email: currentUser?.email }),
+
+  getAdmins: () => apiGet({ action: 'getAdmins', email: currentUser?.email }),
+  addAdmin: (newEmail, newName) =>
+    apiPost({ action: 'addAdmin', email: currentUser?.email, newEmail, newName }),
+  removeAdmin: (targetEmail) =>
+    apiPost({ action: 'removeAdmin', email: currentUser?.email, targetEmail }),
 };

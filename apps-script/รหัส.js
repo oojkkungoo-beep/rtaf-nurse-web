@@ -1,27 +1,33 @@
 const SHEET_ID = '1Z4bYmol5qtVGQNDWAEHrNHyZyGLlqHncFJWPPxqY7Qw';
 const MEMBERS_SHEET = 'Members';
-const NEWS_SHEET = 'News';
+const NEWS_SHEET    = 'News';
 const PENDING_SHEET = 'Pending';
 const LOGBOOK_SHEET = 'Logbooks';
+const ADMINS_SHEET  = 'Admins';
 
-const ADMIN_EMAILS = ['oojkkungoo@gmail.com', 'nurse.rtafnc@gmail.com'];
+// Hardcoded superadmins (ลบออกไม่ได้)
+const SUPER_ADMINS = ['oojkkungoo@gmail.com', 'nurse.rtafnc@gmail.com'];
 
-// Column indices (0-based) ตาม Sheet จริง
+// Column indices (0-based) — Members sheet
 const COL = {
-  ROW:       0,  // ลำดับ
-  ID:        1,  // เลขที่
-  RANK:      2,  // ยศ
-  FNAME:     3,  // ชื่อ
-  LNAME:     4,  // สกุล
-  GEN:       5,  // รุ่น
-  TYPE:      6,  // ประเภท
-  WORKPLACE: 7,  // สถานปฏิบัติงาน
-  INST:      8,  // สถาบัน
-  ADDR:      9,  // ที่อยู่
-  PHONE:     10, // เบอร์โทร
-  STATUS:    11, // สถานะ
-  IMAGE:     12, // image
+  ROW:       0,
+  ID:        1,
+  RANK:      2,
+  FNAME:     3,
+  LNAME:     4,
+  GEN:       5,
+  TYPE:      6,
+  WORKPLACE: 7,
+  INST:      8,
+  ADDR:      9,
+  PHONE:     10,
+  STATUS:    11,
+  IMAGE:     12,
 };
+
+// Logbook columns (0-based) — new schema
+// Timestamp(0) Member_ID(1) Rank(2) FullName(3) Gen(4) Welfare(5) Activity(6) Approver(7) Recorder(8)
+const LCOL = { TS:0, MID:1, RANK:2, NAME:3, GEN:4, WELFARE:5, ACTIVITY:6, APPROVER:7, RECORDER:8 };
 
 // ---- Entry Points ----
 
@@ -31,30 +37,22 @@ function doGet(e) {
   let result;
   try {
     switch (action) {
-      case 'getStats':
-        result = getStats();
-        break;
-      case 'getFilterOptions':
-        result = getFilterOptions();
-        break;
-      case 'getNews':
-        result = getNews();
-        break;
-      case 'searchMembers':
-        result = searchMembers(e.parameter);
-        break;
-      case 'getMember':
-        result = getMember(e.parameter.id);
-        break;
-      case 'getLogbooks':
-        result = getLogbooks(e.parameter);
-        break;
+      case 'getStats':         result = getStats(); break;
+      case 'getFilterOptions': result = getFilterOptions(); break;
+      case 'getLogbookOptions':result = getLogbookOptions(); break;
+      case 'getNews':          result = getNews(); break;
+      case 'searchMembers':    result = searchMembers(params); break;
+      case 'getMember':        result = getMember(params.id); break;
+      case 'getLogbooks':      result = getLogbooks(params); break;
+      case 'searchLogbooks':   result = searchLogbooks(params); break;
       case 'getPending':
-        if (!isAdmin(e.parameter.email)) return jsonOut({ error: 'Unauthorized' });
-        result = getPending();
-        break;
+        if (!isAdmin(params.email)) return jsonOut({ error: 'Unauthorized' });
+        result = getPending(); break;
+      case 'getAdmins':
+        if (!isAdmin(params.email)) return jsonOut({ error: 'Unauthorized' });
+        result = getAdmins(); break;
       default:
-        result = { status: 'ok', message: 'ชศพอ. API v1.0' };
+        result = { status: 'ok', message: 'ชศพอ. API v2.0' };
     }
   } catch (err) {
     result = { error: err.message };
@@ -64,59 +62,50 @@ function doGet(e) {
 
 function doPost(e) {
   let data;
-  try {
-    data = JSON.parse(e.postData.contents);
-  } catch (err) {
-    return jsonOut({ error: 'Invalid JSON' });
-  }
+  try { data = JSON.parse(e.postData.contents); }
+  catch (err) { return jsonOut({ error: 'Invalid JSON' }); }
 
   const action = data.action || '';
   let result;
   try {
     switch (action) {
-      case 'register':
-        result = submitRegistration(data);
-        break;
+      case 'register':      result = submitRegistration(data); break;
       case 'addNews':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = addNews(data);
-        break;
+        result = addNews(data); break;
       case 'updateNews':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = updateNews(data);
-        break;
+        result = updateNews(data); break;
       case 'deleteNews':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = deleteNews(data.id);
-        break;
+        result = deleteNews(data.id); break;
       case 'updateMember':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = updateMember(data);
-        break;
+        result = updateMember(data); break;
       case 'deleteMember':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = deleteMember(data.id);
-        break;
+        result = deleteMember(data.id); break;
       case 'approveMember':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = approveMember(data.id);
-        break;
+        result = approveMember(data.id); break;
       case 'addLogbook':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = addLogbook(data);
-        break;
+        result = addLogbook(data); break;
       case 'pinNews':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = pinNews(data);
-        break;
+        result = pinNews(data); break;
       case 'reorderNews':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = reorderNews(data);
-        break;
+        result = reorderNews(data); break;
       case 'seedNews':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
-        result = seedNews();
-        break;
+        result = seedNews(); break;
+      case 'addAdmin':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = addAdmin(data); break;
+      case 'removeAdmin':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = removeAdmin(data); break;
       default:
         result = { error: 'Unknown action: ' + action };
     }
@@ -149,7 +138,13 @@ function getOrCreateSheet(name, headerRow) {
 }
 
 function isAdmin(email) {
-  return ADMIN_EMAILS.indexOf(email) >= 0;
+  if (!email) return false;
+  const em = String(email).trim().toLowerCase();
+  if (SUPER_ADMINS.some(function(s) { return s.toLowerCase() === em; })) return true;
+  const sheet = getSheet(ADMINS_SHEET);
+  if (!sheet) return false;
+  const rows = sheet.getDataRange().getValues();
+  return rows.slice(1).some(function(r) { return String(r[0]).trim().toLowerCase() === em; });
 }
 
 function rowToMember(row) {
@@ -171,10 +166,23 @@ function rowToMember(row) {
 }
 
 function isMemberRow(row) {
-  // กรองแถว header, summary, และแถวว่าง
   const fname = String(row[COL.FNAME] || '').trim();
   const lname = String(row[COL.LNAME] || '').trim();
   return fname.length > 0 && lname.length > 0 && fname !== 'ชื่อ';
+}
+
+function rowToLogbook(r) {
+  return {
+    timestamp: r[LCOL.TS],
+    member_id: r[LCOL.MID],
+    rank:      r[LCOL.RANK]     || '',
+    fullname:  r[LCOL.NAME]     || '',
+    gen:       r[LCOL.GEN]      || '',
+    welfare:   r[LCOL.WELFARE]  || '',
+    activity:  r[LCOL.ACTIVITY] || '',
+    approver:  r[LCOL.APPROVER] || '',
+    recorder:  r[LCOL.RECORDER] || '',
+  };
 }
 
 // ---- Public APIs ----
@@ -184,16 +192,31 @@ function getStats() {
   const data = sheet.getDataRange().getValues();
   const rows = data.slice(1).filter(isMemberRow);
 
-  const total = rows.length;
-  const active = rows.filter(function(r) { return r[COL.TYPE] === 'สามัญ'; }).length;
-  const genSet = {};
+  const total    = rows.length;
+  const deceased = rows.filter(function(r) { return r[COL.STATUS] === 'เสียชีวิต'; }).length;
+  const active   = total - deceased;
+  const genSet   = {};
+  const typeCount = {};
+
   rows.forEach(function(r) {
     const g = String(r[COL.GEN]).trim();
     if (g) genSet[g] = true;
+    const t = String(r[COL.TYPE] || 'ไม่ระบุ').trim();
+    typeCount[t] = (typeCount[t] || 0) + 1;
   });
-  const generations = Object.keys(genSet).length;
 
-  return { total: total, active: active, generations: generations };
+  const generations = Object.keys(genSet).length;
+  const by_type = Object.keys(typeCount).map(function(t) { return { type: t, count: typeCount[t] }; });
+
+  // Pending count
+  var pendingCount = 0;
+  var pendingSheet = getSheet(PENDING_SHEET);
+  if (pendingSheet) {
+    var pData = pendingSheet.getDataRange().getValues();
+    pendingCount = Math.max(0, pData.length - 1);
+  }
+
+  return { total: total, active: active, deceased: deceased, generations: generations, by_type: by_type, pending_count: pendingCount };
 }
 
 function getFilterOptions() {
@@ -213,8 +236,31 @@ function getFilterOptions() {
     if (!isNaN(nb)) return 1;
     return a.localeCompare(b, 'th');
   });
-  const types = Object.keys(typeSet).sort(function(a,b){ return a.localeCompare(b,'th'); });
+  const types = Object.keys(typeSet).sort(function(a, b) { return a.localeCompare(b, 'th'); });
   return { generations: gens, types: types };
+}
+
+function getLogbookOptions() {
+  const sheet = getSheet(LOGBOOK_SHEET);
+  if (!sheet) return { welfares: [], gens: [] };
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return { welfares: [], gens: [] };
+  const welfareSet = {}, genSet = {};
+  data.slice(1).filter(function(r) { return r[0]; }).forEach(function(r) {
+    const w = String(r[LCOL.WELFARE] || '').trim();
+    const g = String(r[LCOL.GEN]     || '').trim();
+    if (w) welfareSet[w] = true;
+    if (g) genSet[g] = true;
+  });
+  return {
+    welfares: Object.keys(welfareSet).sort(function(a, b) { return a.localeCompare(b, 'th'); }),
+    gens: Object.keys(genSet).sort(function(a, b) {
+      const na = parseFloat(a), nb = parseFloat(b);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      if (!isNaN(na)) return -1; if (!isNaN(nb)) return 1;
+      return a.localeCompare(b, 'th');
+    }),
+  };
 }
 
 // News columns: id(0) date(1) category(2) title(3) summary(4) content(5) pinned(6) sort_order(7)
@@ -224,7 +270,6 @@ function getNews() {
   const sheet = getOrCreateSheet(NEWS_SHEET, NEWS_HDR);
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { news: [] };
-
   const news = data.slice(1)
     .filter(function(r) { return r[0]; })
     .map(function(r, i) {
@@ -235,22 +280,19 @@ function getNews() {
         sort_order: parseInt(r[7], 10) || i,
       };
     });
-
-  // ปักหมุดขึ้นก่อน, เรียงตาม sort_order, แล้วที่เหลือตาม sort_order
   news.sort(function(a, b) {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return a.sort_order - b.sort_order;
   });
-
   return { news: news };
 }
 
 function searchMembers(params) {
-  const query  = String(params.query || '').toLowerCase().trim();
-  const gen    = String(params.gen || '').trim();
-  const type   = String(params.type || '').trim();
-  const page   = parseInt(params.page, 10) || 1;
-  const limit  = parseInt(params.limit, 10) || 9999;
+  const query = String(params.query || '').toLowerCase().trim();
+  const gen   = String(params.gen   || '').trim();
+  const type  = String(params.type  || '').trim();
+  const page  = parseInt(params.page,  10) || 1;
+  const limit = parseInt(params.limit, 10) || 9999;
 
   const sheet = getSheet(MEMBERS_SHEET);
   const data = sheet.getDataRange().getValues();
@@ -261,15 +303,14 @@ function searchMembers(params) {
       const s = [r[COL.FNAME], r[COL.LNAME], r[COL.ID], r[COL.RANK]].join(' ').toLowerCase();
       if (s.indexOf(query) < 0) return false;
     }
-    if (gen && String(r[COL.GEN]).trim() !== gen) return false;
-    if (type && r[COL.TYPE] !== type) return false;
+    if (gen  && String(r[COL.GEN]).trim()  !== gen)  return false;
+    if (type && String(r[COL.TYPE]).trim() !== type) return false;
     return true;
   });
 
   const total = filtered.length;
   const start = (page - 1) * limit;
   const members = filtered.slice(start, start + limit).map(rowToMember);
-
   return { members: members, total: total, page: page, limit: limit, pages: Math.ceil(total / limit) };
 }
 
@@ -277,7 +318,7 @@ function getMember(id) {
   const sheet = getSheet(MEMBERS_SHEET);
   const data = sheet.getDataRange().getValues();
   const row = data.slice(1).filter(isMemberRow).filter(function(r) {
-    return String(r[COL.ID]).trim() === String(id).trim() ||
+    return String(r[COL.ID]).trim()  === String(id).trim() ||
            String(r[COL.ROW]).trim() === String(id).trim();
   })[0];
   if (!row) return { error: 'ไม่พบสมาชิก' };
@@ -286,39 +327,61 @@ function getMember(id) {
 
 function getLogbooks(params) {
   const sheet = getSheet(LOGBOOK_SHEET);
-  if (!sheet) return { logbooks: [] };
+  if (!sheet) return { logbooks: [], total: 0 };
 
   const memberId = String(params.memberId || '').trim();
-  const page  = parseInt(params.page, 10)  || 1;
-  const limit = parseInt(params.limit, 10) || 20;
+  const page  = parseInt(params.page,  10) || 1;
+  const limit = parseInt(params.limit, 10) || 9999;
 
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { logbooks: [], total: 0 };
 
   let rows = data.slice(1).filter(function(r) { return r[0]; });
-  if (memberId) rows = rows.filter(function(r) { return String(r[1]) === memberId; });
+  if (memberId) rows = rows.filter(function(r) { return String(r[LCOL.MID]) === memberId; });
 
   const total = rows.length;
   const start = (page - 1) * limit;
-  const logbooks = rows.slice(start, start + limit).map(function(r) {
-    return { timestamp: r[0], memberId: r[1], welfare: r[2], activity: r[3], approver: r[4], recorder: r[5] };
+  return { logbooks: rows.slice(start, start + limit).map(rowToLogbook), total: total };
+}
+
+function searchLogbooks(params) {
+  const sheet = getSheet(LOGBOOK_SHEET);
+  if (!sheet) return { logbooks: [], total: 0 };
+
+  const query   = String(params.query   || '').toLowerCase().trim();
+  const gen     = String(params.gen     || '').trim();
+  const welfare = String(params.welfare || '').trim();
+  const page    = parseInt(params.page,  10) || 1;
+  const limit   = parseInt(params.limit, 10) || 9999;
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return { logbooks: [], total: 0 };
+
+  let rows = data.slice(1).filter(function(r) { return r[0]; });
+  rows = rows.filter(function(r) {
+    if (query) {
+      const s = [r[LCOL.NAME], r[LCOL.MID]].join(' ').toLowerCase();
+      if (s.indexOf(query) < 0) return false;
+    }
+    if (gen     && String(r[LCOL.GEN]    ).trim() !== gen)     return false;
+    if (welfare && String(r[LCOL.WELFARE]).trim() !== welfare)  return false;
+    return true;
   });
 
-  return { logbooks: logbooks, total: total };
+  const total = rows.length;
+  const start = (page - 1) * limit;
+  return { logbooks: rows.slice(start, start + limit).map(rowToLogbook), total: total };
 }
 
 function getPending() {
   const sheet = getSheet(PENDING_SHEET);
   if (!sheet) return { pending: [] };
-
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { pending: [] };
-
-  const pending = data.slice(1).map(function(r) {
-    return { id: r[0], timestamp: r[1], rank: r[2], fname: r[3], lname: r[4],
-             gen: r[5], type: r[6], institution: r[7], address: r[8], phone: r[9], email: r[10] };
+  const pending = data.slice(1).filter(function(r) { return r[0]; }).map(function(r) {
+    return { row_id: r[0], submitted_at: r[1], rank: r[2], firstname: r[3], lastname: r[4],
+             generation: r[5], member_type: r[6], institution: r[7], address: r[8], mobile_phone: r[9], email: r[10] };
   });
-
   return { pending: pending };
 }
 
@@ -364,30 +427,21 @@ function pinNews(data) {
   const idx = rows.findIndex(function(r) { return String(r[0]) === String(data.id); });
   if (idx < 0) return { error: 'ไม่พบข่าว' };
   const newVal = data.pinned === true || data.pinned === 'true';
-  sheet.getRange(idx + 1, 7).setValue(newVal); // col G = pinned
+  sheet.getRange(idx + 1, 7).setValue(newVal);
   return { success: true, pinned: newVal };
 }
 
 function reorderNews(data) {
-  // data.id, data.direction = 'up' | 'down'
   const sheet = _getNewsSheet();
   const rows = sheet.getDataRange().getValues();
   const dataRows = rows.slice(1).filter(function(r) { return r[0]; });
-
-  // sort by current sort_order
   dataRows.sort(function(a, b) { return (parseInt(a[7],10)||0) - (parseInt(b[7],10)||0); });
-
   const pos = dataRows.findIndex(function(r) { return String(r[0]) === String(data.id); });
   if (pos < 0) return { error: 'ไม่พบข่าว' };
-
   const swapPos = data.direction === 'up' ? pos - 1 : pos + 1;
-  if (swapPos < 0 || swapPos >= dataRows.length) return { success: true }; // already at edge
-
-  // swap sort_order values
+  if (swapPos < 0 || swapPos >= dataRows.length) return { success: true };
   const orderA = parseInt(dataRows[pos][7], 10) || pos;
   const orderB = parseInt(dataRows[swapPos][7], 10) || swapPos;
-
-  // find sheet rows for each
   function findSheetRow(id) {
     return rows.findIndex(function(r) { return String(r[0]) === String(id); });
   }
@@ -402,13 +456,9 @@ function seedNews() {
   const sheet = _getNewsSheet();
   if (sheet.getLastRow() > 1) return { skipped: true, message: 'มีข่าวอยู่แล้ว' };
   var items = [
-    ['2026-06-01','ประชาสัมพันธ์','ประชุมใหญ่สามัญประจำปี 2569','ขอเชิญสมาชิกทุกท่านร่วมประชุมใหญ่สามัญ ในวันเสาร์ที่ 20 กรกฎาคม 2569 ณ ห้องประชุมชมรม เวลา 09.00 น.',''],
-    ['2026-05-20','กิจกรรม','กิจกรรมวันพยาบาลสากล 2569','ชมรมจัดกิจกรรมเนื่องในวันพยาบาลสากล 12 พฤษภาคม 2569 มีการบรรยายวิชาการและมอบรางวัลพยาบาลดีเด่น',''],
-    ['2026-05-10','สวัสดิการ','เปิดรับสมัครสมาชิกใหม่รุ่นที่ 78','เปิดรับสมัครสมาชิกสามัญและสมทบ ตั้งแต่บัดนี้จนถึง 30 มิถุนายน 2569 สอบถามเพิ่มเติมได้ที่ nurse.rtafnc@gmail.com',''],
-    ['2026-04-25','ประชาสัมพันธ์','แจ้งเปลี่ยนแปลงที่อยู่ที่ทำการชมรม','ที่ทำการชมรมย้ายไปยังอาคารใหม่ ชั้น 3 อาคารสวัสดิการกองทัพอากาศ มีผลตั้งแต่วันที่ 1 พฤษภาคม 2569',''],
-    ['2026-04-10','วิชาการ','สัมมนาวิชาการ "พยาบาลกับเทคโนโลยี AI"','ขอเชิญร่วมสัมมนาในหัวข้อ "บทบาทพยาบาลในยุค AI" วันศุกร์ที่ 30 พฤษภาคม 2569 ณ ห้องประชุมกองพยาบาล',''],
-    ['2026-03-15','สวัสดิการ','ทุนการศึกษาบุตรสมาชิกประจำปี 2569','เปิดรับสมัครทุนการศึกษาสำหรับบุตรสมาชิก จำนวน 20 ทุน ทุนละ 5,000 บาท ยื่นใบสมัครภายในวันที่ 31 พฤษภาคม 2569',''],
-    ['2026-02-28','กิจกรรม','โครงการจิตอาสาพยาบาลชุมชน ปี 2569','ชมรมจัดโครงการออกหน่วยเคลื่อนที่ให้บริการสุขภาพแก่ชุมชนรอบค่ายทหารอากาศ กำหนดการ 4 ครั้ง ตลอดปี',''],
+    ['2026-06-01','ประชาสัมพันธ์','ประชุมใหญ่สามัญประจำปี 2569','ขอเชิญสมาชิกทุกท่านร่วมประชุมใหญ่สามัญ',''],
+    ['2026-05-20','กิจกรรม','กิจกรรมวันพยาบาลสากล 2569','ชมรมจัดกิจกรรมเนื่องในวันพยาบาลสากล 12 พฤษภาคม 2569',''],
+    ['2026-05-10','สวัสดิการ','เปิดรับสมัครสมาชิกใหม่รุ่นที่ 78','เปิดรับสมัครสมาชิกสามัญและสมทบ',''],
   ];
   items.forEach(function(it, i) {
     sheet.appendRow(['news_seed_'+(i+1), it[0], it[1], it[2], it[3], it[4], false, i+1]);
@@ -423,7 +473,6 @@ function updateMember(data) {
   const rows = sheet.getDataRange().getValues();
   const idx = rows.findIndex(function(r) { return String(r[COL.ID]).trim() === String(data.id).trim(); });
   if (idx < 0) return { error: 'ไม่พบสมาชิก' };
-
   const rowNum = idx + 1;
   const fields = [
     [COL.RANK, data.rank], [COL.FNAME, data.fname], [COL.LNAME, data.lname],
@@ -465,15 +514,12 @@ function approveMember(pendingId) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const pendingSheet = ss.getSheetByName(PENDING_SHEET);
   if (!pendingSheet) return { error: 'ไม่พบ Pending' };
-
   const rows = pendingSheet.getDataRange().getValues();
   const idx = rows.findIndex(function(r) { return String(r[0]) === String(pendingId); });
   if (idx < 0) return { error: 'ไม่พบคำขอ' };
-
   const p = rows[idx];
   const membersSheet = getSheet(MEMBERS_SHEET);
   const lastRow = membersSheet.getLastRow();
-
   membersSheet.appendRow([
     lastRow, 'new-' + Date.now(),
     p[2], p[3], p[4], p[5], p[6], '', p[7], p[8], p[9], 'มีชีวิต', '',
@@ -486,11 +532,62 @@ function approveMember(pendingId) {
 
 function addLogbook(data) {
   const sheet = getOrCreateSheet(LOGBOOK_SHEET,
-    ['Timestamp', 'Member_ID', 'Welfare', 'Activity', 'Approver', 'Recorder']);
+    ['Timestamp', 'Member_ID', 'Rank', 'FullName', 'Gen', 'Welfare', 'Activity', 'Approver', 'Recorder']);
+  const ts = data.date ? data.date : new Date().toISOString().split('T')[0];
   sheet.appendRow([
-    new Date().toISOString(),
-    data.memberId || '', data.welfare || '',
-    data.activity || '', data.approver || '', data.recorder || '',
+    ts,
+    data.memberId  || '',
+    data.rank      || '',
+    data.fullname  || '',
+    data.gen       || '',
+    data.welfare   || '',
+    data.activity  || '',
+    data.approver  || '',
+    data.email     || '',  // recorder = admin email
   ]);
+  return { success: true };
+}
+
+// ---- Admin Management ----
+
+function getAdmins() {
+  const sheet = getOrCreateSheet(ADMINS_SHEET, ['email', 'name', 'added_by', 'added_at']);
+  const data = sheet.getDataRange().getValues();
+  var admins = data.length > 1
+    ? data.slice(1).filter(function(r) { return r[0]; }).map(function(r) {
+        return { email: r[0], name: r[1] || '', added_by: r[2] || '', added_at: r[3] || '', removable: true };
+      })
+    : [];
+  // Prepend superadmins
+  var sheetEmails = admins.map(function(a) { return a.email.toLowerCase(); });
+  SUPER_ADMINS.slice().reverse().forEach(function(e) {
+    if (!sheetEmails.includes(e.toLowerCase())) {
+      admins.unshift({ email: e, name: 'Superadmin', added_by: 'system', added_at: '', removable: false });
+    }
+  });
+  return { admins: admins };
+}
+
+function addAdmin(data) {
+  const newEmail = String(data.newEmail || '').trim();
+  const newName  = String(data.newName  || '').trim();
+  if (!newEmail) return { error: 'กรุณาระบุ email' };
+  if (isAdmin(newEmail)) return { error: 'มี Admin นี้อยู่แล้ว' };
+  const sheet = getOrCreateSheet(ADMINS_SHEET, ['email', 'name', 'added_by', 'added_at']);
+  sheet.appendRow([newEmail, newName, data.email, new Date().toISOString()]);
+  return { success: true };
+}
+
+function removeAdmin(data) {
+  const target = String(data.targetEmail || '').trim().toLowerCase();
+  if (SUPER_ADMINS.some(function(s) { return s.toLowerCase() === target; })) {
+    return { error: 'ไม่สามารถลบ Superadmin ได้' };
+  }
+  const sheet = getSheet(ADMINS_SHEET);
+  if (!sheet) return { error: 'ไม่พบ Admins sheet' };
+  const rows = sheet.getDataRange().getValues();
+  const idx = rows.findIndex(function(r) { return String(r[0]).trim().toLowerCase() === target; });
+  if (idx < 0) return { error: 'ไม่พบ Admin นี้' };
+  sheet.deleteRow(idx + 1);
   return { success: true };
 }
