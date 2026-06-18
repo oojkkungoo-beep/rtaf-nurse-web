@@ -24,8 +24,8 @@ const API = {
   getStats: () => apiGet({ action: 'getStats' }),
   getFilterOptions: () => apiGet({ action: 'getFilterOptions' }),
 
-  searchMembers: (query = '', gen = '', type = '', page = 1) =>
-    apiGet({ action: 'searchMembers', query, gen, type, page, limit: CONFIG.ITEMS_PER_PAGE }),
+  searchMembers: (query = '', gen = '', type = '', page = 1, limit = 9999) =>
+    apiGet({ action: 'searchMembers', query, gen, type, page, limit }),
 
   getMemberById: (id) => apiGet({ action: 'getMember', id }),
 
