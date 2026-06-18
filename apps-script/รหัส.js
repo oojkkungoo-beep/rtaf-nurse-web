@@ -250,7 +250,7 @@ function searchMembers(params) {
   const gen    = String(params.gen || '').trim();
   const type   = String(params.type || '').trim();
   const page   = parseInt(params.page, 10) || 1;
-  const limit  = parseInt(params.limit, 10) || 20;
+  const limit  = parseInt(params.limit, 10) || 9999;
 
   const sheet = getSheet(MEMBERS_SHEET);
   const data = sheet.getDataRange().getValues();
