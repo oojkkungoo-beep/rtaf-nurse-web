@@ -35,6 +35,8 @@
     .user-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: rgba(255,255,255,0.1); margin: 0 0.75rem 1rem; border-radius: 8px; }
     .user-chip img { width: 32px; height: 32px; border-radius: 50%; }
     .user-chip span { font-size: 0.82rem; color: #ccd; }
+    .admin-member-row:nth-child(even) { background: #f8f9fc; }
+    .admin-member-row:hover { background: #eef2ff; }
   </style>
 </head>
 <body>
@@ -104,25 +106,36 @@
     <!-- Members -->
     <div class="tab-content" id="tab-members">
       <div class="section-title">จัดการสมาชิก</div>
-      <div class="search-box" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
+      <div class="search-box" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
         <input type="text" id="admin-search" placeholder="ค้นหาชื่อ / นามสกุล" style="flex:2 1 160px;padding:0.5rem 0.8rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit" />
-        <select id="admin-s-type" style="flex:1 1 120px;padding:0.5rem 0.7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
-          <option value="">ทุกประเภท</option>
-          <option value="สามัญ">สามัญ</option>
-          <option value="สมทบ">สมทบ</option>
+        <select id="admin-s-gen" onchange="adminSearchMembers(1)" style="flex:1 1 100px;padding:0.5rem 0.7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
+          <option value="">ทุกรุ่น</option>
         </select>
-        <button class="btn btn-primary btn-sm" onclick="adminSearchMembers(1)">ค้นหา</button>
+        <select id="admin-s-type" onchange="adminSearchMembers(1)" style="flex:1 1 110px;padding:0.5rem 0.7rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff">
+          <option value="">ทุกประเภท</option>
+        </select>
       </div>
       <div id="admin-result-count" style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem"></div>
-      <div class="table-wrap" style="overflow-y:auto;max-height:60vh">
-        <table>
+      <div style="overflow-x:auto;overflow-y:auto;max-height:68vh;border:1px solid #e5e7eb;border-radius:10px">
+        <table style="min-width:800px;border-radius:0;border:none">
           <thead>
-            <tr><th>ลำดับ</th><th>รุ่น</th><th>ยศ ชื่อ นามสกุล</th><th>ประเภท</th><th>สถานปฏิบัติงาน</th><th>สถาบัน</th><th>เบอร์โทร</th><th>สถานะ</th><th>จัดการ</th></tr>
+            <tr style="position:sticky;top:0;z-index:2;background:var(--navy);color:#fff">
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">ลำดับ</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">รุ่น</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem;min-width:150px">ยศ ชื่อ นามสกุล</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">ประเภท</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem;min-width:120px">สถานปฏิบัติงาน</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">สถาบัน</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">เบอร์โทร</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">สถานะ</th>
+              <th style="white-space:nowrap;padding:.6rem .8rem;font-size:.8rem">จัดการ</th>
+            </tr>
           </thead>
-          <tbody id="admin-member-tbody"><tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr></tbody>
+          <tbody id="admin-member-tbody">
+            <tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr>
+          </tbody>
         </table>
       </div>
-      <div id="admin-pagination"></div>
     </div>
 
     <!-- Modal: Edit Member -->

@@ -14,6 +14,7 @@ function onAuthSuccess(user) {
   loadDashboard();
   loadPending();
   loadAdminNews();
+  loadAdminFilterOptions();
 }
 function onAuthSignOut() {
   document.getElementById('auth-overlay').style.display = 'flex';
@@ -33,6 +34,29 @@ function showTab(name, el) {
   el.classList.add('active');
   if (name === 'members') adminSearchMembers(1);
   if (name === 'logbook') loadLogbooks();
+}
+
+// Filter options for member dropdowns
+async function loadAdminFilterOptions() {
+  try {
+    const data = await API.getFilterOptions();
+    const genSel  = document.getElementById('admin-s-gen');
+    const typeSel = document.getElementById('admin-s-type');
+    if (genSel && data.gens) {
+      data.gens.forEach(g => {
+        const o = document.createElement('option');
+        o.value = o.textContent = g;
+        genSel.appendChild(o);
+      });
+    }
+    if (typeSel && data.types) {
+      data.types.forEach(t => {
+        const o = document.createElement('option');
+        o.value = o.textContent = t;
+        typeSel.appendChild(o);
+      });
+    }
+  } catch(e) {}
 }
 
 // Dashboard
@@ -101,17 +125,16 @@ async function rejectMember(id) {
 }
 
 // Members
-let adminPage = 1;
 let _adminMemberCache = [];
 
 async function adminSearchMembers(page) {
-  adminPage = page;
   const query = document.getElementById('admin-search').value.trim();
+  const gen   = document.getElementById('admin-s-gen').value;
   const type  = document.getElementById('admin-s-type').value;
   const tbody = document.getElementById('admin-member-tbody');
   tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr>';
   try {
-    const data = await API.searchMembers(query, '', type, page, 100);
+    const data = await API.searchMembers(query, gen, type, 1, 9999);
     _adminMemberCache = data.members || [];
     document.getElementById('admin-result-count').textContent = `พบ ${(data.total||0).toLocaleString()} รายการ`;
     if (!_adminMemberCache.length) {
@@ -120,22 +143,21 @@ async function adminSearchMembers(page) {
     }
     tbody.innerHTML = _adminMemberCache.map((m, i) => {
       const statCls = m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red';
-      return `<tr>
-        <td style="text-align:center">${escHtml(String(m.row_num||i+1))}</td>
-        <td style="text-align:center">${escHtml(String(m.gen||'-'))}</td>
-        <td>${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}</td>
-        <td>${escHtml(m.type||'-')}</td>
-        <td>${escHtml(m.workplace||'-')}</td>
-        <td>${escHtml(m.institution||'-')}</td>
-        <td>${escHtml(m.phone||'-')}</td>
-        <td><span class="badge ${statCls}">${escHtml(m.status||'-')}</span></td>
-        <td style="white-space:nowrap">
-          <button class="btn btn-sm" style="background:#3b82f6;color:#fff;margin-right:4px" onclick="openMemberEdit(${i})">✏️ แก้ไข</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteMember('${escHtml(String(m.id||''))}','${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}')">🗑️ ลบ</button>
+      return `<tr style="font-size:.85rem;border-bottom:1px solid #f0f0f5" class="admin-member-row">
+        <td style="text-align:center;padding:.5rem .8rem;white-space:nowrap">${escHtml(String(m.row_num||i+1))}</td>
+        <td style="text-align:center;padding:.5rem .8rem;white-space:nowrap">${escHtml(String(m.gen||'-'))}</td>
+        <td style="padding:.5rem .8rem">${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}</td>
+        <td style="padding:.5rem .8rem;white-space:nowrap">${escHtml(m.type||'-')}</td>
+        <td style="padding:.5rem .8rem">${escHtml(m.workplace||'-')}</td>
+        <td style="padding:.5rem .8rem;white-space:nowrap">${escHtml(m.institution||'-')}</td>
+        <td style="padding:.5rem .8rem;white-space:nowrap">${escHtml(m.phone||'-')}</td>
+        <td style="padding:.5rem .8rem;white-space:nowrap"><span class="badge ${statCls}">${escHtml(m.status||'-')}</span></td>
+        <td style="padding:.5rem .8rem;white-space:nowrap">
+          <button class="btn btn-sm" style="background:#3b82f6;color:#fff;margin-right:4px;padding:3px 8px" onclick="openMemberEdit(${i})">✏️ แก้ไข</button>
+          <button class="btn btn-sm btn-danger" style="padding:3px 8px" onclick="deleteMember('${escHtml(String(m.id||''))}','${escHtml([m.rank,m.fname,m.lname].filter(Boolean).join(' '))}')">🗑️ ลบ</button>
         </td>
       </tr>`;
     }).join('');
-    renderPagination('admin-pagination', data.total, page, 'adminSearchMembers');
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="9" style="color:#dc2626;text-align:center;padding:1rem">ยังไม่ได้เชื่อมต่อ API</td></tr>';
   }
