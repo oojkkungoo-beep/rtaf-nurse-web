@@ -100,6 +100,12 @@ function doPost(e) {
       case 'seedNews':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = seedNews(); break;
+      case 'getPending':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = getPending(); break;
+      case 'getAdmins':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = getAdmins(); break;
       case 'addAdmin':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = addAdmin(data); break;
@@ -172,6 +178,16 @@ function isMemberRow(row) {
 }
 
 function rowToLogbook(r) {
+  // Detect old 6-column schema: r[5] empty means welfare was at r[2]
+  var isOld = !r[5] && !r[6] && !r[7];
+  if (isOld) {
+    return {
+      timestamp: r[0], member_id: r[1],
+      rank: '', fullname: '', gen: '',
+      welfare:  r[2] || '', activity: r[3] || '',
+      approver: r[4] || '', recorder: r[5] || '',
+    };
+  }
   return {
     timestamp: r[LCOL.TS],
     member_id: r[LCOL.MID],
@@ -195,20 +211,38 @@ function getStats() {
   const total    = rows.length;
   const deceased = rows.filter(function(r) { return r[COL.STATUS] === 'เสียชีวิต'; }).length;
   const active   = total - deceased;
-  const genSet   = {};
-  const typeCount = {};
+
+  const typeCount = {}, instCount = {}, genMap = {};
 
   rows.forEach(function(r) {
-    const g = String(r[COL.GEN]).trim();
-    if (g) genSet[g] = true;
-    const t = String(r[COL.TYPE] || 'ไม่ระบุ').trim();
+    const t    = String(r[COL.TYPE]   || 'ไม่ระบุ').trim();
+    const inst = String(r[COL.INST]   || 'ไม่ระบุ').trim();
+    const g    = String(r[COL.GEN]    || '').trim();
+    const isMember = (t === 'สามัญ' || t === 'สมทบ');
+
     typeCount[t] = (typeCount[t] || 0) + 1;
+    instCount[inst] = (instCount[inst] || 0) + 1;
+
+    if (g) {
+      if (!genMap[g]) genMap[g] = { gen: g, member: 0, non_member: 0 };
+      if (isMember) genMap[g].member++;
+      else genMap[g].non_member++;
+    }
   });
 
-  const generations = Object.keys(genSet).length;
-  const by_type = Object.keys(typeCount).map(function(t) { return { type: t, count: typeCount[t] }; });
+  // Sort gen numerically then alphabetically
+  var genList = Object.values(genMap).sort(function(a, b) {
+    var na = parseFloat(a.gen), nb = parseFloat(b.gen);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    if (!isNaN(na)) return -1; if (!isNaN(nb)) return 1;
+    return a.gen.localeCompare(b.gen, 'th');
+  });
 
-  // Pending count
+  var by_type = Object.keys(typeCount).map(function(t) { return { type: t, count: typeCount[t] }; });
+  var by_inst = Object.keys(instCount)
+    .map(function(k) { return { inst: k, count: instCount[k] }; })
+    .sort(function(a, b) { return b.count - a.count; });
+
   var pendingCount = 0;
   var pendingSheet = getSheet(PENDING_SHEET);
   if (pendingSheet) {
@@ -216,7 +250,12 @@ function getStats() {
     pendingCount = Math.max(0, pData.length - 1);
   }
 
-  return { total: total, active: active, deceased: deceased, generations: generations, by_type: by_type, pending_count: pendingCount };
+  return {
+    total: total, active: active, deceased: deceased,
+    generations: genList.length,
+    by_type: by_type, by_inst: by_inst, by_gen: genList,
+    pending_count: pendingCount
+  };
 }
 
 function getFilterOptions() {

@@ -17,10 +17,15 @@ async function apiPost(data = {}) {
   return res.json();
 }
 
+// อ่าน email จาก sessionStorage (ใช้ใน Admin API calls)
+function getSessionEmail() {
+  try { return JSON.parse(sessionStorage.getItem('adminUser') || '{}').email || ''; }
+  catch(e) { return ''; }
+}
+
 // Public APIs
 const API = {
   getNews: () => apiGet({ action: 'getNews' }),
-
   getStats: () => apiGet({ action: 'getStats' }),
   getFilterOptions: () => apiGet({ action: 'getFilterOptions' }),
 
@@ -31,16 +36,16 @@ const API = {
 
   submitRegistration: (data) => apiPost({ action: 'register', ...data }),
 
-  // Admin APIs
-  addNews: (data) => apiPost({ action: 'addNews', email: currentUser?.email, ...data }),
-  updateNews: (data) => apiPost({ action: 'updateNews', email: currentUser?.email, ...data }),
-  deleteNews: (id) => apiPost({ action: 'deleteNews', email: currentUser?.email, id }),
+  // Admin APIs — ใช้ POST เพื่อให้ส่ง email ได้น่าเชื่อถือ
+  addNews:    (data) => apiPost({ action: 'addNews',    email: getSessionEmail(), ...data }),
+  updateNews: (data) => apiPost({ action: 'updateNews', email: getSessionEmail(), ...data }),
+  deleteNews: (id)   => apiPost({ action: 'deleteNews', email: getSessionEmail(), id }),
 
-  updateMember: (data) => apiPost({ action: 'updateMember', email: currentUser?.email, ...data }),
-  deleteMember: (id) => apiPost({ action: 'deleteMember', email: currentUser?.email, id }),
-  approveMember: (id) => apiPost({ action: 'approveMember', email: currentUser?.email, id }),
+  updateMember: (data) => apiPost({ action: 'updateMember', email: getSessionEmail(), ...data }),
+  deleteMember: (id)   => apiPost({ action: 'deleteMember', email: getSessionEmail(), id }),
+  approveMember:(id)   => apiPost({ action: 'approveMember',email: getSessionEmail(), id }),
 
-  addLogbook: (data) => apiPost({ action: 'addLogbook', email: currentUser?.email, ...data }),
+  addLogbook: (data) => apiPost({ action: 'addLogbook', email: getSessionEmail(), ...data }),
   getLogbooks: (memberId = '', page = 1, limit = 9999) =>
     apiGet({ action: 'getLogbooks', memberId, page, limit }),
   searchLogbooks: (query = '', gen = '', welfare = '', page = 1, limit = 9999) =>
@@ -48,11 +53,10 @@ const API = {
   getLogbookOptions: () => apiGet({ action: 'getLogbookOptions' }),
 
   getPendingRegistrations: () =>
-    apiGet({ action: 'getPending', email: currentUser?.email }),
+    apiPost({ action: 'getPending', email: getSessionEmail() }),
 
-  getAdmins: () => apiGet({ action: 'getAdmins', email: currentUser?.email }),
-  addAdmin: (newEmail, newName) =>
-    apiPost({ action: 'addAdmin', email: currentUser?.email, newEmail, newName }),
-  removeAdmin: (targetEmail) =>
-    apiPost({ action: 'removeAdmin', email: currentUser?.email, targetEmail }),
+  // Admin Management — ใช้ POST เพราะต้องการ auth
+  getAdmins:   ()                  => apiPost({ action: 'getAdmins',   email: getSessionEmail() }),
+  addAdmin:    (newEmail, newName) => apiPost({ action: 'addAdmin',    email: getSessionEmail(), newEmail, newName }),
+  removeAdmin: (targetEmail)       => apiPost({ action: 'removeAdmin', email: getSessionEmail(), targetEmail }),
 };

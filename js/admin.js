@@ -41,26 +41,102 @@ function showTab(name, el) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 async function loadDashboard() {
   try {
-    const data = await API.getStats();
-    const colors = { total:'#1a2a5e', active:'#166534', deceased:'#991b1b', generations:'#92400e' };
+    const d = await API.getStats();
+
+    // Stat cards
     document.getElementById('stat-cards').innerHTML = [
-      { label:'สมาชิกทั้งหมด', val: data.total,       color: colors.total },
-      { label:'มีชีวิต',       val: data.active,      color: colors.active },
-      { label:'เสียชีวิต',     val: data.deceased,    color: colors.deceased },
-      { label:'จำนวนรุ่น',     val: data.generations, color: colors.generations },
+      { label:'ข้อมูลทั้งหมด',    val: d.total,       color:'#1a2a5e' },
+      { label:'มีชีวิต',          val: d.active,      color:'#166534' },
+      { label:'เสียชีวิต',        val: d.deceased,    color:'#991b1b' },
+      { label:'จำนวนรุ่น',        val: d.generations, color:'#92400e' },
     ].map(s => `
       <div class="stat-card" style="border-top-color:${s.color}">
         <div class="val" style="color:${s.color}">${(s.val || 0).toLocaleString()}</div>
         <div class="lbl">${s.label}</div>
       </div>`).join('');
 
-    // Type breakdown pills
+    // Type breakdown
     const typeBar = document.getElementById('type-bar');
-    if (typeBar && data.by_type) {
-      typeBar.innerHTML = data.by_type.map(t =>
-        `<span class="type-pill">${escHtml(t.type)}: <strong>${t.count.toLocaleString()}</strong> คน</span>`
-      ).join('');
+    if (typeBar && d.by_type) {
+      typeBar.innerHTML = d.by_type
+        .sort((a, b) => b.count - a.count)
+        .map(t => `<span class="type-pill">${escHtml(t.type)}: <strong>${t.count.toLocaleString()}</strong> คน</span>`)
+        .join('');
     }
+
+    // Detail tables
+    const detailEl = document.getElementById('dashboard-detail');
+    if (!detailEl) return;
+
+    const instRows = (d.by_inst || []).map((r, i) => `
+      <tr style="background:${i%2?'#f8f9fc':'#fff'}">
+        <td style="padding:.4rem .7rem;font-size:.85rem">${escHtml(r.inst)}</td>
+        <td style="padding:.4rem .7rem;text-align:center;font-size:.85rem;font-weight:600">${r.count.toLocaleString()}</td>
+      </tr>`).join('');
+
+    const genRows = (d.by_gen || []).map((r, i) => {
+      const total = r.member + r.non_member;
+      const nonCls = r.non_member > 0 ? 'color:#dc2626' : 'color:#6b7280';
+      return `<tr style="background:${i%2?'#f8f9fc':'#fff'}">
+        <td style="padding:.35rem .7rem;text-align:center;font-size:.82rem;font-weight:700;color:var(--gold)">${escHtml(String(r.gen))}</td>
+        <td style="padding:.35rem .7rem;text-align:center;font-size:.82rem;color:#166534;font-weight:600">${r.member.toLocaleString()}</td>
+        <td style="padding:.35rem .7rem;text-align:center;font-size:.82rem;${nonCls};font-weight:600">${r.non_member.toLocaleString()}</td>
+        <td style="padding:.35rem .7rem;text-align:center;font-size:.82rem;font-weight:700">${total.toLocaleString()}</td>
+      </tr>`;
+    }).join('');
+
+    detailEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+        <!-- Institution -->
+        <div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden">
+          <div style="padding:.65rem 1rem;background:var(--navy);color:#fff;font-weight:700;font-size:.88rem">สถาบัน ชศพอ.</div>
+          <div style="max-height:220px;overflow-y:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="background:#f0f4ff">
+                <th style="padding:.4rem .7rem;text-align:left;font-size:.78rem;color:var(--navy)">สถาบัน</th>
+                <th style="padding:.4rem .7rem;text-align:center;font-size:.78rem;color:var(--navy)">จำนวน</th>
+              </tr></thead>
+              <tbody>${instRows || '<tr><td colspan="2" style="text-align:center;padding:1rem;color:var(--text-muted)">ไม่มีข้อมูล</td></tr>'}</tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Status summary -->
+        <div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden">
+          <div style="padding:.65rem 1rem;background:var(--navy);color:#fff;font-weight:700;font-size:.88rem">สถานะสมาชิก ชศพอ.</div>
+          <div style="padding:1rem">
+            ${(d.by_type || []).sort((a,b)=>b.count-a.count).map(t => {
+              const bar = Math.round((t.count / (d.total || 1)) * 100);
+              const col = t.type === 'สามัญ' ? '#1a2a5e' : t.type === 'สมทบ' ? '#0ea5e9' : '#9ca3af';
+              return `<div style="margin-bottom:.75rem">
+                <div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:.2rem">
+                  <span style="font-weight:600">${escHtml(t.type)}</span>
+                  <span style="color:var(--text-muted)">${t.count.toLocaleString()} คน</span>
+                </div>
+                <div style="height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden">
+                  <div style="width:${bar}%;height:100%;background:${col};border-radius:99px"></div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+      <!-- Generation table -->
+      <div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden">
+        <div style="padding:.65rem 1rem;background:var(--navy);color:#fff;font-weight:700;font-size:.88rem">รายงานตามรุ่น</div>
+        <div style="max-height:380px;overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse">
+            <thead style="position:sticky;top:0;z-index:1">
+              <tr style="background:#f0f4ff">
+                <th style="padding:.4rem .7rem;text-align:center;font-size:.78rem;color:var(--navy)">รุ่น</th>
+                <th style="padding:.4rem .7rem;text-align:center;font-size:.78rem;color:#166534">เป็นสมาชิก</th>
+                <th style="padding:.4rem .7rem;text-align:center;font-size:.78rem;color:#dc2626">ไม่เป็นสมาชิก</th>
+                <th style="padding:.4rem .7rem;text-align:center;font-size:.78rem;color:var(--navy)">รวม</th>
+              </tr>
+            </thead>
+            <tbody>${genRows || '<tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--text-muted)">ไม่มีข้อมูล</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
   } catch(e) {
     document.getElementById('stat-cards').innerHTML = '<p style="color:var(--text-muted)">ยังไม่ได้เชื่อมต่อ API</p>';
   }
