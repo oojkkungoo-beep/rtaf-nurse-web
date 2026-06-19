@@ -709,6 +709,16 @@ async function removeAdmin(email) {
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
+function triggerDownload(url, filename) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 async function exportMembers() {
   const gen  = document.getElementById('admin-s-gen')?.value  || '';
   const type = document.getElementById('admin-s-type')?.value || '';
@@ -718,7 +728,7 @@ async function exportMembers() {
     const res = await API.exportMembers(gen, type);
     if (res.error) { showToast(res.error, 'error'); return; }
     showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
-    window.open(res.url, '_blank');
+    triggerDownload(res.url, 'members.xlsx');
   } catch(e) { showToast('Export ไม่สำเร็จ', 'error'); }
   finally { btn.disabled = false; btn.textContent = '📥 Export Excel'; }
 }
@@ -732,7 +742,7 @@ async function exportLogbooks() {
     const res = await API.exportLogbooks(gen, welfare);
     if (res.error) { showToast(res.error, 'error'); return; }
     showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
-    window.open(res.url, '_blank');
+    triggerDownload(res.url, 'logbooks.xlsx');
   } catch(e) { showToast('Export ไม่สำเร็จ', 'error'); }
   finally { btn.disabled = false; btn.textContent = '📥 Export Excel'; }
 }
