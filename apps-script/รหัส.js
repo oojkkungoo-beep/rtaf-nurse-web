@@ -50,6 +50,8 @@ function doGet(e) {
       case 'getMember':        result = getMember(params.id); break;
       case 'getLogbooks':      result = getLogbooks(params); break;
       case 'searchLogbooks':   result = searchLogbooks(params); break;
+      case 'checkAdmin':
+        result = { isAdmin: isAdmin(params.email) }; break;
       case 'getPending':
         if (!isAdmin(params.email)) return jsonOut({ error: 'Unauthorized' });
         result = getPending(); break;

@@ -11,18 +11,22 @@ function initGoogleAuth() {
 
 function handleCredentialResponse(response) {
   const payload = parseJwt(response.credential);
-  currentUser = {
+  const user = {
     email: payload.email,
     name: payload.name,
     picture: payload.picture,
   };
-  const isAdmin = CONFIG.ADMIN_EMAILS.includes(currentUser.email);
-  if (!isAdmin) {
-    showToast('ไม่มีสิทธิ์เข้าถึง Admin Panel', 'error');
-    currentUser = null;
-    return;
-  }
-  onAuthSuccess(currentUser);
+  fetch(`${CONFIG.API_URL}?action=checkAdmin&email=${encodeURIComponent(user.email)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.isAdmin) {
+        showToast('ไม่มีสิทธิ์เข้าถึง Admin Panel', 'error');
+        return;
+      }
+      currentUser = user;
+      onAuthSuccess(currentUser);
+    })
+    .catch(() => showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error'));
 }
 
 function showGoogleSignIn(containerId) {
