@@ -122,6 +122,12 @@ function doPost(e) {
       case 'deleteLogbook':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = deleteLogbook(data.row_num); break;
+      case 'exportMembers':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = exportMembers(data); break;
+      case 'exportLogbooks':
+        if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
+        result = exportLogbooks(data); break;
       case 'addAdmin':
         if (!isAdmin(data.email)) return jsonOut({ error: 'Unauthorized' });
         result = addAdmin(data); break;
@@ -157,6 +163,51 @@ function getOrCreateSheet(name, headerRow) {
     if (headerRow) sheet.appendRow(headerRow);
   }
   return sheet;
+}
+
+const SITE_URL = 'https://oojkkungoo-beep.github.io/rtaf-nurse-web';
+
+function getAdminEmails() {
+  var emails = SUPER_ADMINS.slice();
+  var sheet = getSheet(ADMINS_SHEET);
+  if (sheet) {
+    sheet.getDataRange().getValues().slice(1).forEach(function(r) {
+      if (r[0]) emails.push(String(r[0]).trim());
+    });
+  }
+  return emails.filter(function(e, i, a) { return e && a.indexOf(e) === i; });
+}
+
+function notifyAdminsNewRegistration(rank, fname, lname, gen, type, email) {
+  try {
+    var adminEmails = getAdminEmails();
+    MailApp.sendEmail({
+      to: adminEmails.join(','),
+      subject: '[ชศพอ.] ใบสมัครใหม่ — ' + rank + ' ' + fname + ' ' + lname,
+      body: 'มีใบสมัครสมาชิกใหม่เข้าระบบ\n\n' +
+            'ยศ/คำนำหน้า : ' + rank + '\n' +
+            'ชื่อ-นามสกุล : ' + fname + ' ' + lname + '\n' +
+            'รุ่น          : ' + gen + '\n' +
+            'ประเภท       : ' + type + '\n' +
+            'อีเมลผู้สมัคร : ' + (email || '-') + '\n\n' +
+            'กรุณาเข้า Admin Panel เพื่ออนุมัติ:\n' + SITE_URL + '/admin/'
+    });
+  } catch(e) { /* ไม่ block registration ถ้าส่งเมลไม่ได้ */ }
+}
+
+function notifyApplicantApproved(toEmail, rank, fname, lname) {
+  if (!toEmail) return;
+  try {
+    MailApp.sendEmail({
+      to: toEmail,
+      subject: '[ชศพอ.] ยืนยันการเป็นสมาชิก ชศพอ.',
+      body: 'เรียน ' + rank + ' ' + fname + ' ' + lname + '\n\n' +
+            'คณะกรรมการชุมนุมศิษย์พยาบาลทหารอากาศ (ชศพอ.)\n' +
+            'ขอแจ้งให้ทราบว่าได้อนุมัติการเป็นสมาชิกของท่านเรียบร้อยแล้ว\n\n' +
+            'ท่านสามารถค้นหาข้อมูลสมาชิกได้ที่:\n' + SITE_URL + '/members.html\n\n' +
+            'ด้วยความนับถือ\nคณะกรรมการ ชศพอ.\nnurse.rtafnc@gmail.com'
+    });
+  } catch(e) {}
 }
 
 function isAdmin(email) {
@@ -599,6 +650,7 @@ function submitRegistration(data) {
   sheet.appendRow([id, new Date().toISOString(),
     rank, fname, lname, gen, type, inst, addr, phone, email,
     work, bdate, wphone, hphone, marital, spouse]);
+  notifyAdminsNewRegistration(rank, fname, lname, gen, type, email);
   return { success: true, id: id };
 }
 
@@ -631,6 +683,7 @@ function approveMember(pendingId) {
     p[16] || '',  // spouse
   ]);
   pendingSheet.deleteRow(idx + 1);
+  notifyApplicantApproved(p[10], p[2], p[3], p[4]);
   return { success: true };
 }
 
@@ -652,6 +705,71 @@ function addLogbook(data) {
     data.email     || '',  // recorder = admin email
   ]);
   return { success: true };
+}
+
+function exportMembers(data) {
+  var sheet = getSheet(MEMBERS_SHEET);
+  var rows = sheet.getDataRange().getValues().slice(1).filter(isMemberRow);
+  var gen  = String(data.gen  || '').trim();
+  var type = String(data.type || '').trim();
+  if (gen)  rows = rows.filter(function(r) { return String(r[COL.GEN] ).trim() === gen;  });
+  if (type) rows = rows.filter(function(r) { return String(r[COL.TYPE]).trim() === type; });
+
+  var title = 'ชศพอ. สมาชิก ' + new Date().toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
+  var ss = SpreadsheetApp.create(title);
+  var ws = ss.getActiveSheet();
+  ws.setName('Members');
+
+  var hdr = ['ลำดับ','รหัสสมาชิก','ยศ/คำนำหน้า','ชื่อ','นามสกุล','รุ่น','ประเภท',
+             'สถานปฏิบัติงาน','สถาบัน','ที่อยู่ติดต่อ','เบอร์มือถือ','สถานะ',
+             'วันเกิด','เบอร์ทำงาน','เบอร์บ้าน','สถานภาพสมรส','คู่สมรส'];
+  ws.appendRow(hdr);
+  rows.forEach(function(r) {
+    ws.appendRow([r[COL.ROW],r[COL.ID],r[COL.RANK],r[COL.FNAME],r[COL.LNAME],
+                  r[COL.GEN],r[COL.TYPE],r[COL.WORKPLACE],r[COL.INST],r[COL.ADDR],
+                  r[COL.PHONE],r[COL.STATUS],r[COL.BIRTHDATE]||'',r[COL.WORK_PHONE]||'',
+                  r[COL.HOME_PHONE]||'',r[COL.MARITAL]||'',r[COL.SPOUSE]||'']);
+  });
+  ws.getRange(1,1,1,hdr.length).setFontWeight('bold').setBackground('#1a2a5e').setFontColor('white');
+  ws.setFrozenRows(1);
+
+  DriveApp.getFileById(ss.getId()).setSharing(
+    DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return {
+    success: true, count: rows.length,
+    url: 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx'
+  };
+}
+
+function exportLogbooks(data) {
+  var sheet = getSheet(LOGBOOK_SHEET);
+  if (!sheet) return { error: 'ไม่พบ Logbooks sheet' };
+  var rows = sheet.getDataRange().getValues().slice(1).filter(function(r) { return r[0]; });
+  var gen     = String(data.gen     || '').trim();
+  var welfare = String(data.welfare || '').trim();
+  if (gen)     rows = rows.filter(function(r) { return String(r[LCOL.GEN]    ).trim() === gen;     });
+  if (welfare) rows = rows.filter(function(r) { return String(r[LCOL.WELFARE]).trim() === welfare; });
+
+  var title = 'ชศพอ. Logbook ' + new Date().toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
+  var ss = SpreadsheetApp.create(title);
+  var ws = ss.getActiveSheet();
+  ws.setName('Logbooks');
+
+  var hdr = ['วันที่','รหัสสมาชิก','ยศ/คำนำหน้า','ชื่อ-นามสกุล','รุ่น','สวัสดิการ','กิจกรรม/รายละเอียด','ผู้อนุมัติ','ผู้บันทึก'];
+  ws.appendRow(hdr);
+  rows.forEach(function(r) {
+    ws.appendRow([r[LCOL.TS],r[LCOL.MID],r[LCOL.RANK],r[LCOL.NAME],
+                  r[LCOL.GEN],r[LCOL.WELFARE],r[LCOL.ACTIVITY],r[LCOL.APPROVER],r[LCOL.RECORDER]]);
+  });
+  ws.getRange(1,1,1,hdr.length).setFontWeight('bold').setBackground('#1a2a5e').setFontColor('white');
+  ws.setFrozenRows(1);
+
+  DriveApp.getFileById(ss.getId()).setSharing(
+    DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return {
+    success: true, count: rows.length,
+    url: 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx'
+  };
 }
 
 function rejectPending(pendingId) {

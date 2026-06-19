@@ -76,6 +76,57 @@
     /* ── Admin mgmt ── */
     .admin-list-row { display:flex; align-items:center; gap:.75rem; padding:.6rem .9rem; border-bottom:1px solid #f0f0f5; font-size:.9rem; }
     .admin-list-row:nth-child(even) { background:#f8f9fc; }
+
+    /* ── Export button ── */
+    .btn-export { background:#0f4c35; color:white; }
+    .btn-export:hover { background:#0a3828; }
+
+    /* ── Hamburger ── */
+    .hamburger { display:none; background:none; border:none; cursor:pointer; padding:.4rem .6rem; margin-right:.5rem; }
+    .hamburger span { display:block; width:22px; height:2px; background:white; margin:4px 0; border-radius:2px; transition:.2s; }
+
+    /* ── Sidebar overlay ── */
+    .sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:199; }
+
+    /* ── Mobile ── */
+    @media (max-width:768px) {
+      .hamburger { display:block; }
+
+      .admin-layout { flex-direction:column; }
+
+      .sidebar {
+        position:fixed; top:0; left:-240px; height:100%; width:240px;
+        z-index:200; transition:left .25s ease; padding-top:3.5rem;
+        box-shadow:4px 0 16px rgba(0,0,0,.3);
+      }
+      .sidebar.open { left:0; }
+      .sidebar-backdrop.open { display:block; }
+
+      .main-content { padding:1rem; min-height:calc(100vh - 60px); }
+
+      /* Stat grid 2 col on mobile */
+      .stat-grid { grid-template-columns:repeat(2,1fr); }
+
+      /* Modals full-screen on mobile */
+      .modal-overlay { padding:.5rem; align-items:flex-end; }
+      .modal { border-radius:12px 12px 0 0; max-height:92vh; max-width:100% !important; }
+      .modal.wide { max-width:100% !important; }
+
+      /* Tables scroll */
+      .stbl-wrap { max-height:55vh; }
+      .stbl-wrap table { min-width:560px; }
+
+      /* Dashboard 2-col detail → 1-col */
+      #dashboard-detail > div { grid-template-columns:1fr !important; }
+
+      /* Admin mgmt form stack */
+      #tab-adminmgmt [style*="grid-template-columns:1fr 1fr auto"] {
+        grid-template-columns:1fr !important;
+      }
+
+      /* Navbar brand text small */
+      .brand-text .subtitle { display:none; }
+    }
   </style>
 </head>
 <body>
@@ -90,7 +141,13 @@
   </div>
 </div>
 
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
 <nav class="navbar">
+  <div style="display:flex;align-items:center">
+    <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
   <a href="../index.html" class="navbar-brand">
     <img src="../images/logo.png" alt="ชศพอ. Logo" />
     <div class="brand-text">
@@ -98,6 +155,7 @@
       <div class="subtitle">ชุมนุมศิษย์พยาบาลทหารอากาศ</div>
     </div>
   </a>
+  </div><!-- /hamburger+brand -->
   <div class="nav-links">
     <a href="../index.html">← กลับหน้าหลัก</a>
     <button class="btn btn-sm" onclick="signOut()" style="color:white;background:rgba(255,255,255,.15)">ออกจากระบบ</button>
@@ -107,7 +165,7 @@
 <div class="admin-layout">
 
   <!-- Sidebar -->
-  <div class="sidebar">
+  <div class="sidebar" id="admin-sidebar">
     <div id="user-chip" class="user-chip" style="display:none">
       <img id="user-avatar" src="" alt="" />
       <div><div id="user-name" style="font-size:.85rem;color:white"></div><span>Admin</span></div>
@@ -155,7 +213,10 @@
 
     <!-- ══ Members ══ -->
     <div class="tab-content" id="tab-members">
-      <div class="section-title">จัดการสมาชิก</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+        <div class="section-title" style="margin-bottom:0">จัดการสมาชิก</div>
+        <button class="btn btn-sm btn-export" onclick="exportMembers()">📥 Export Excel</button>
+      </div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
         <input type="text" id="admin-search" placeholder="ค้นหาชื่อ / นามสกุล"
           style="flex:2 1 160px;padding:.5rem .8rem;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit" />
@@ -189,7 +250,10 @@
     <div class="tab-content" id="tab-logbook">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
         <div class="section-title" style="margin-bottom:0">Logbook สวัสดิการทั้งหมด</div>
-        <button class="btn btn-gold btn-sm" onclick="openStandaloneLogbookModal()">+ บันทึกใหม่</button>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-sm btn-export" onclick="exportLogbooks()">📥 Export Excel</button>
+          <button class="btn btn-gold btn-sm" onclick="openStandaloneLogbookModal()">+ บันทึกใหม่</button>
+        </div>
       </div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
         <input type="text" id="lb-search" placeholder="ค้นหาชื่อ / เลขที่สมาชิก"

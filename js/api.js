@@ -58,6 +58,9 @@ const API = {
   getPendingRegistrations: () =>
     apiPost({ action: 'getPending', email: getSessionEmail() }),
 
+  exportMembers:  (gen='', type='')    => apiPost({ action: 'exportMembers',  email: getSessionEmail(), gen, type }),
+  exportLogbooks: (gen='', welfare='') => apiPost({ action: 'exportLogbooks', email: getSessionEmail(), gen, welfare }),
+
   // Admin Management — ใช้ POST เพราะต้องการ auth
   getAdmins:   ()                  => apiPost({ action: 'getAdmins',   email: getSessionEmail() }),
   addAdmin:    (newEmail, newName) => apiPost({ action: 'addAdmin',    email: getSessionEmail(), newEmail, newName }),

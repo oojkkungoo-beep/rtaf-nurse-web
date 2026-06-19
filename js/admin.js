@@ -33,6 +33,7 @@ function showTab(name, el) {
   document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   el.classList.add('active');
+  closeSidebar();
   if (name === 'members')   adminSearchMembers(1);
   if (name === 'logbook')   { loadLogbookOptions(); searchLogbooks(); }
   if (name === 'adminmgmt') loadAdmins();
@@ -705,6 +706,45 @@ async function removeAdmin(email) {
     showToast('ลบ Admin เรียบร้อยแล้ว', 'success');
     loadAdmins();
   } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+async function exportMembers() {
+  const gen  = document.getElementById('admin-s-gen')?.value  || '';
+  const type = document.getElementById('admin-s-type')?.value || '';
+  const btn  = event.currentTarget;
+  btn.disabled = true; btn.textContent = '⏳ กำลัง Export...';
+  try {
+    const res = await API.exportMembers(gen, type);
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
+    window.open(res.url, '_blank');
+  } catch(e) { showToast('Export ไม่สำเร็จ', 'error'); }
+  finally { btn.disabled = false; btn.textContent = '📥 Export Excel'; }
+}
+
+async function exportLogbooks() {
+  const gen     = document.getElementById('lb-s-gen')?.value     || '';
+  const welfare = document.getElementById('lb-s-welfare')?.value || '';
+  const btn = event.currentTarget;
+  btn.disabled = true; btn.textContent = '⏳ กำลัง Export...';
+  try {
+    const res = await API.exportLogbooks(gen, welfare);
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
+    window.open(res.url, '_blank');
+  } catch(e) { showToast('Export ไม่สำเร็จ', 'error'); }
+  finally { btn.disabled = false; btn.textContent = '📥 Export Excel'; }
+}
+
+// ── Sidebar (mobile) ──────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('admin-sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('admin-sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
