@@ -82,50 +82,56 @@
     .btn-export:hover { background:#0a3828; }
 
     /* ── Hamburger ── */
-    .hamburger { display:none; background:none; border:none; cursor:pointer; padding:.4rem .6rem; margin-right:.5rem; }
-    .hamburger span { display:block; width:22px; height:2px; background:white; margin:4px 0; border-radius:2px; transition:.2s; }
+    .hamburger { display:none; background:none; border:none; cursor:pointer; padding:.5rem; margin-right:.25rem; flex-shrink:0; }
+    .hamburger span { display:block; width:22px; height:2.5px; background:white; margin:5px 0; border-radius:2px; transition:.2s; }
 
-    /* ── Sidebar overlay ── */
-    .sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:199; }
+    /* ── Sidebar overlay backdrop ── */
+    .sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:198; }
+    .sidebar-backdrop.open { display:block; }
 
     /* ── Mobile ── */
     @media (max-width:768px) {
+      body { overflow-x:hidden; }
+
       .hamburger { display:block; }
 
-      .admin-layout { flex-direction:column; }
-
+      /* Sidebar: hidden off-screen, slides in as overlay */
       .sidebar {
-        position:fixed; top:0; left:-240px; height:100%; width:240px;
-        z-index:200; transition:left .25s ease; padding-top:3.5rem;
-        box-shadow:4px 0 16px rgba(0,0,0,.3);
+        position:fixed; top:0; left:-260px; height:100dvh; width:250px;
+        z-index:200; transition:left .25s ease; padding-top:1rem;
+        overflow-y:auto; box-shadow:4px 0 20px rgba(0,0,0,.35);
       }
       .sidebar.open { left:0; }
-      .sidebar-backdrop.open { display:block; }
 
-      .main-content { padding:1rem; min-height:calc(100vh - 60px); }
+      /* Main takes full width */
+      .admin-layout { flex-direction:column; }
+      .main-content { padding:1rem; width:100%; }
 
-      /* Stat grid 2 col on mobile */
-      .stat-grid { grid-template-columns:repeat(2,1fr); }
+      /* Stat grid 2 col */
+      .stat-grid { grid-template-columns:repeat(2,1fr); gap:.75rem; }
 
-      /* Modals full-screen on mobile */
-      .modal-overlay { padding:.5rem; align-items:flex-end; }
-      .modal { border-radius:12px 12px 0 0; max-height:92vh; max-width:100% !important; }
+      /* Modals: bottom sheet on mobile */
+      .modal-overlay { padding:0; align-items:flex-end; }
+      .modal { border-radius:16px 16px 0 0; max-height:90dvh; max-width:100% !important; padding:1.25rem; }
       .modal.wide { max-width:100% !important; }
 
-      /* Tables scroll */
-      .stbl-wrap { max-height:55vh; }
-      .stbl-wrap table { min-width:560px; }
+      /* Tables */
+      .stbl-wrap { max-height:52vh; }
 
-      /* Dashboard 2-col detail → 1-col */
-      #dashboard-detail > div { grid-template-columns:1fr !important; }
-
-      /* Admin mgmt form stack */
-      #tab-adminmgmt [style*="grid-template-columns:1fr 1fr auto"] {
+      /* Dashboard detail: 2-col → 1-col */
+      #dashboard-detail > div[style*="grid-template-columns:1fr 1fr"] {
         grid-template-columns:1fr !important;
       }
 
-      /* Navbar brand text small */
+      /* Admin form stack */
+      .admin-add-form-grid { grid-template-columns:1fr !important; }
+
+      /* Hide subtitle in navbar */
       .brand-text .subtitle { display:none; }
+
+      /* Detail grid 1 col on very small */
+      .detail-grid { grid-template-columns:1fr; }
+      .detail-grid .full { grid-column:1; }
     }
   </style>
 </head>
