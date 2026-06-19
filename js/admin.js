@@ -709,14 +709,15 @@ async function removeAdmin(email) {
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
-function triggerDownload(url, filename) {
+function triggerDownload(b64, filename) {
+  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const blob  = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url   = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
   document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function exportMembers() {
@@ -728,7 +729,7 @@ async function exportMembers() {
     const res = await API.exportMembers(gen, type);
     if (res.error) { showToast(res.error, 'error'); return; }
     showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
-    triggerDownload(res.url, 'members.xlsx');
+    triggerDownload(res.data, 'members.xlsx');
   } catch(e) { showToast('Export ไม่สำเร็จ', 'error'); }
   finally { btn.disabled = false; btn.textContent = '📥 Export Excel'; }
 }
@@ -742,7 +743,7 @@ async function exportLogbooks() {
     const res = await API.exportLogbooks(gen, welfare);
     if (res.error) { showToast(res.error, 'error'); return; }
     showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
-    triggerDownload(res.url, 'logbooks.xlsx');
+    triggerDownload(res.data, 'logbooks.xlsx');
   } catch(e) { showToast('Export ไม่สำเร็จ', 'error'); }
   finally { btn.disabled = false; btn.textContent = '📥 Export Excel'; }
 }
