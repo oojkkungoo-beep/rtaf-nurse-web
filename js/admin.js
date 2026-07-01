@@ -721,12 +721,13 @@ function triggerDownload(b64, filename) {
 }
 
 async function exportMembers() {
+  const query = document.getElementById('admin-search')?.value || '';
   const gen  = document.getElementById('admin-s-gen')?.value  || '';
   const type = document.getElementById('admin-s-type')?.value || '';
   const btn  = event.currentTarget;
   btn.disabled = true; btn.textContent = '⏳ กำลัง Export...';
   try {
-    const res = await API.exportMembers(gen, type);
+    const res = await API.exportMembers(query, gen, type);
     if (res.error) { showToast(res.error, 'error'); return; }
     showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
     triggerDownload(res.data, 'members.xlsx');
@@ -735,12 +736,13 @@ async function exportMembers() {
 }
 
 async function exportLogbooks() {
+  const query   = document.getElementById('lb-search')?.value    || '';
   const gen     = document.getElementById('lb-s-gen')?.value     || '';
   const welfare = document.getElementById('lb-s-welfare')?.value || '';
   const btn = event.currentTarget;
   btn.disabled = true; btn.textContent = '⏳ กำลัง Export...';
   try {
-    const res = await API.exportLogbooks(gen, welfare);
+    const res = await API.exportLogbooks(query, gen, welfare);
     if (res.error) { showToast(res.error, 'error'); return; }
     showToast(`Export สำเร็จ — ${res.count} รายการ`, 'success');
     triggerDownload(res.data, 'logbooks.xlsx');

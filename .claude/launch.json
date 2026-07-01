@@ -1,11 +1,1 @@
-{
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "rtaf-nurse-web",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-s", "D:\\Claude_Cowork\\rtaf-nurse-web", "-l", "4200"],
-      "port": 4200
-    }
-  ]
-}
+{"version":"0.0.1","configurations":[{"name":"rtaf-nurse-web","runtimeExecutable":"npx","runtimeArgs":["serve","-l","3400","."],"port":3400}]}

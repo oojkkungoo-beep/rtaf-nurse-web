@@ -1,12 +1,16 @@
-const SHEET_ID = '1Z4bYmol5qtVGQNDWAEHrNHyZyGLlqHncFJWPPxqY7Qw';
+const SHEET_ID = '1gI8-0r_In70pqU1fRpwUrRC3KC7rpCwjJcDHU16Lk2M';
 const MEMBERS_SHEET = 'Members';
 const NEWS_SHEET    = 'News';
 const PENDING_SHEET = 'Pending';
 const LOGBOOK_SHEET = 'Logbooks';
 const ADMINS_SHEET  = 'Admins';
 
+function testUpdateMember() {
+Logger.log(JSON.stringify(updateMember({id: 'new-1782899359405', address: 'test-debug-' + new Date().getTime()})));
+}
+
 // Hardcoded superadmins (ลบออกไม่ได้)
-const SUPER_ADMINS = ['oojkkungoo@gmail.com', 'nurse.rtafnc@gmail.com'];
+const SUPER_ADMINS = ['oojkkungoo@gmail.com', 'nurse.rtafnc@gmail.com', 'jed.pengsalud@gmail.com'];
 
 // Column indices (0-based) — Members sheet
 const COL = {
@@ -38,6 +42,7 @@ const LCOL = { TS:0, MID:1, RANK:2, NAME:3, GEN:4, WELFARE:5, ACTIVITY:6, APPROV
 
 function doGet(e) {
   const params = (e && e.parameter) ? e.parameter : {};
+  if (params.payload) { return doPost({ postData: { contents: params.payload } }); }
   const action = params.action || '';
   let result;
   try {
@@ -165,7 +170,7 @@ function getOrCreateSheet(name, headerRow) {
   return sheet;
 }
 
-const SITE_URL = 'https://oojkkungoo-beep.github.io/rtaf-nurse-web';
+const SITE_URL = 'https://rtaf-nurse.netlify.app';
 
 function getAdminEmails() {
   var emails = SUPER_ADMINS.slice();
@@ -593,9 +598,11 @@ function updateMember(data) {
     [COL.HOME_PHONE, data.home_phone], [COL.MARITAL,    data.marital],
     [COL.SPOUSE,     data.spouse],
   ];
+  const row = rows[idx].slice();
   fields.forEach(function(f) {
-    if (f[1] !== undefined) sheet.getRange(rowNum, f[0] + 1).setValue(f[1]);
+    if (f[1] !== undefined) row[f[0]] = f[1];
   });
+  sheet.getRange(rowNum, 1, 1, row.length).setValues([row]);
   return { success: true };
 }
 
@@ -707,11 +714,42 @@ function addLogbook(data) {
   return { success: true };
 }
 
-function exportMembers(data) {
+function _convertToXlsxWithRetry(fileId) {
+  var url = 'https://docs.google.com/spreadsheets/d/' + fileId + '/export?format=xlsx';
+  var token = ScriptApp.getOAuthToken();
+  var lastErr;
+  for (var i = 0; i < 4; i++) {
+    try {
+      var response = UrlFetchApp.fetch(url, {
+        headers: {
+          'Authorization': 'Bearer ' + token
+        },
+        muteHttpExceptions: true
+      });
+      if (response.getResponseCode() === 200) {
+        return response.getBlob();
+      }
+      lastErr = new Error('HTTP ' + response.getResponseCode() + ': ' + response.getContentText());
+    } catch (e) {
+      lastErr = e;
+    }
+    Utilities.sleep(2000 * (i + 1));
+  }
+  throw lastErr;
+}
+  
+  function exportMembers(data) {
   var sheet = getSheet(MEMBERS_SHEET);
   var rows = sheet.getDataRange().getValues().slice(1).filter(isMemberRow);
+  var query = String(data.query || '').toLowerCase().trim();
   var gen  = String(data.gen  || '').trim();
   var type = String(data.type || '').trim();
+  if (query) {
+    rows = rows.filter(function(r) {
+      var s = [r[COL.FNAME], r[COL.LNAME], r[COL.ID], r[COL.RANK]].join(' ').toLowerCase();
+      return s.indexOf(query) >= 0;
+    });
+  }
   if (gen)  rows = rows.filter(function(r) { return String(r[COL.GEN] ).trim() === gen;  });
   if (type) rows = rows.filter(function(r) { return String(r[COL.TYPE]).trim() === type; });
 
@@ -723,30 +761,36 @@ function exportMembers(data) {
   var hdr = ['ลำดับ','รหัสสมาชิก','ยศ/คำนำหน้า','ชื่อ','นามสกุล','รุ่น','ประเภท',
              'สถานปฏิบัติงาน','สถาบัน','ที่อยู่ติดต่อ','เบอร์มือถือ','สถานะ',
              'วันเกิด','เบอร์ทำงาน','เบอร์บ้าน','สถานภาพสมรส','คู่สมรส'];
-  ws.appendRow(hdr);
-  rows.forEach(function(r) {
-    ws.appendRow([r[COL.ROW],r[COL.ID],r[COL.RANK],r[COL.FNAME],r[COL.LNAME],
-                  r[COL.GEN],r[COL.TYPE],r[COL.WORKPLACE],r[COL.INST],r[COL.ADDR],
-                  r[COL.PHONE],r[COL.STATUS],r[COL.BIRTHDATE]||'',r[COL.WORK_PHONE]||'',
-                  r[COL.HOME_PHONE]||'',r[COL.MARITAL]||'',r[COL.SPOUSE]||'']);
-  });
+  ws.getRange(1, 1, 1, hdr.length).setValues([hdr]);
+  var dataRows = rows.map(function(r) {
+    return [r[COL.ROW],r[COL.ID],r[COL.RANK],r[COL.FNAME],r[COL.LNAME],r[COL.GEN],r[COL.TYPE],r[COL.WORKPLACE],r[COL.INST],r[COL.ADDR],r[COL.PHONE],r[COL.STATUS],r[COL.BIRTHDATE]||'',r[COL.WORK_PHONE]||'',r[COL.HOME_PHONE]||'',r[COL.MARITAL]||'',r[COL.SPOUSE]||''];
+    });
+    if (dataRows.length) ws.getRange(2, 1, dataRows.length, hdr.length).setValues(dataRows);
   ws.getRange(1,1,1,hdr.length).setFontWeight('bold').setBackground('#1a2a5e').setFontColor('white');
   ws.setFrozenRows(1);
+  SpreadsheetApp.flush();
+  Utilities.sleep(1000);
 
-  DriveApp.getFileById(ss.getId()).setSharing(
-    DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return {
-    success: true, count: rows.length,
-    url: 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx'
-  };
+  var blob = _convertToXlsxWithRetry(ss.getId());
+  var file = DriveApp.getFileById(ss.getId());
+  var b64  = Utilities.base64Encode(blob.getBytes());
+  file.setTrashed(true);
+  return { success: true, count: rows.length, data: b64, filename: 'members.xlsx' };
 }
 
 function exportLogbooks(data) {
   var sheet = getSheet(LOGBOOK_SHEET);
   if (!sheet) return { error: 'ไม่พบ Logbooks sheet' };
   var rows = sheet.getDataRange().getValues().slice(1).filter(function(r) { return r[0]; });
+  var query   = String(data.query   || '').toLowerCase().trim();
   var gen     = String(data.gen     || '').trim();
   var welfare = String(data.welfare || '').trim();
+  if (query) {
+    rows = rows.filter(function(r) {
+      var s = [r[LCOL.NAME], r[LCOL.MID]].join(' ').toLowerCase();
+      return s.indexOf(query) >= 0;
+    });
+  }
   if (gen)     rows = rows.filter(function(r) { return String(r[LCOL.GEN]    ).trim() === gen;     });
   if (welfare) rows = rows.filter(function(r) { return String(r[LCOL.WELFARE]).trim() === welfare; });
 
@@ -756,20 +800,21 @@ function exportLogbooks(data) {
   ws.setName('Logbooks');
 
   var hdr = ['วันที่','รหัสสมาชิก','ยศ/คำนำหน้า','ชื่อ-นามสกุล','รุ่น','สวัสดิการ','กิจกรรม/รายละเอียด','ผู้อนุมัติ','ผู้บันทึก'];
-  ws.appendRow(hdr);
-  rows.forEach(function(r) {
-    ws.appendRow([r[LCOL.TS],r[LCOL.MID],r[LCOL.RANK],r[LCOL.NAME],
-                  r[LCOL.GEN],r[LCOL.WELFARE],r[LCOL.ACTIVITY],r[LCOL.APPROVER],r[LCOL.RECORDER]]);
-  });
+  ws.getRange(1, 1, 1, hdr.length).setValues([hdr]);
+  var dataRows = rows.map(function(r) {
+    return [r[LCOL.TS],r[LCOL.MID],r[LCOL.RANK],r[LCOL.NAME],r[LCOL.GEN],r[LCOL.WELFARE],r[LCOL.ACTIVITY],r[LCOL.APPROVER],r[LCOL.RECORDER]];
+    });
+    if (dataRows.length) ws.getRange(2, 1, dataRows.length, hdr.length).setValues(dataRows);
   ws.getRange(1,1,1,hdr.length).setFontWeight('bold').setBackground('#1a2a5e').setFontColor('white');
   ws.setFrozenRows(1);
+  SpreadsheetApp.flush();
+  Utilities.sleep(1000);
 
-  DriveApp.getFileById(ss.getId()).setSharing(
-    DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return {
-    success: true, count: rows.length,
-    url: 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx'
-  };
+  var blob = _convertToXlsxWithRetry(ss.getId());
+  var file = DriveApp.getFileById(ss.getId());
+  var b64  = Utilities.base64Encode(blob.getBytes());
+  file.setTrashed(true);
+  return { success: true, count: rows.length, data: b64, filename: 'logbooks.xlsx' };
 }
 
 function rejectPending(pendingId) {
@@ -846,4 +891,10 @@ function removeAdmin(data) {
   if (idx < 0) return { error: 'ไม่พบ Admin นี้' };
   sheet.deleteRow(idx + 1);
   return { success: true };
+}
+
+function testDriveAuth() {
+  DriveApp.getRootFolder();
+  MailApp.getRemainingDailyQuota();
+  Logger.log('Auth OK');
 }
