@@ -174,6 +174,7 @@ async function approveMember(id) {
   if (!confirm('ยืนยันอนุมัติสมาชิกรายนี้?')) return;
   try {
     await API.approveMember(id);
+    clearMembersCache();
     showToast('อนุมัติเรียบร้อยแล้ว', 'success');
     loadPending(); loadDashboard();
   } catch(e) { showToast('เกิดข้อผิดพลาด', 'error'); }
@@ -213,6 +214,32 @@ async function loadAdminFilterOptions() {
   } catch(e) {}
 }
 
+async function getCachedMembers() {
+  const cached = sessionStorage.getItem('members_data');
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (parsed.timestamp && (Date.now() - parsed.timestamp < 30 * 60 * 1000)) {
+        return parsed.members;
+      }
+    } catch(e) {
+      sessionStorage.removeItem('members_data');
+    }
+  }
+  
+  const data = await API.searchMembers('', '', '', 1, 9999);
+  const members = data.members || [];
+  sessionStorage.setItem('members_data', JSON.stringify({
+    members: members,
+    timestamp: Date.now()
+  }));
+  return members;
+}
+
+function clearMembersCache() {
+  sessionStorage.removeItem('members_data');
+}
+
 async function adminSearchMembers() {
   const query = document.getElementById('admin-search').value.trim();
   const gen   = document.getElementById('admin-s-gen').value;
@@ -220,14 +247,27 @@ async function adminSearchMembers() {
   const tbody = document.getElementById('admin-member-tbody');
   tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr>';
   try {
-    const data = await API.searchMembers(query, gen, type, 1, 9999);
-    _adminMemberCache = data.members || [];
-    document.getElementById('admin-result-count').textContent = `พบ ${(data.total || 0).toLocaleString()} รายการ`;
-    if (!_adminMemberCache.length) {
+    const allMembers = await getCachedMembers();
+    
+    // กรองข้อมูลบนฝั่งเบราว์เซอร์ทันที
+    const filtered = allMembers.filter(m => {
+      if (query) {
+        const queryLower = query.toLowerCase();
+        const s = [m.rank, m.fname, m.lname, m.id].filter(Boolean).join(' ').toLowerCase();
+        if (s.indexOf(queryLower) < 0) return false;
+      }
+      if (gen && String(m.gen).trim() !== gen) return false;
+      if (type && String(m.type).trim() !== type) return false;
+      return true;
+    });
+
+    _adminMemberCache = filtered;
+    document.getElementById('admin-result-count').textContent = `พบ ${filtered.length.toLocaleString()} รายการ`;
+    if (!filtered.length) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted)">ไม่พบข้อมูล</td></tr>';
       return;
     }
-    tbody.innerHTML = _adminMemberCache.map((m, i) => {
+    tbody.innerHTML = filtered.map((m, i) => {
       const statCls = m.status === 'มีชีวิต' ? 'badge-green' : 'badge-red';
       return `<tr class="admin-member-row" onclick="openMemberDetail(${i})">
         <td style="text-align:center">${escHtml(String(m.row_num || i+1))}</td>
@@ -418,6 +458,7 @@ async function saveMemberEdit() {
       spouse:      document.getElementById('em-spouse').value,
       address:     document.getElementById('em-addr').value,
     });
+    clearMembersCache();
     closeModal('edit-member-modal');
     showToast('บันทึกสำเร็จ', 'success');
     adminSearchMembers();
@@ -429,6 +470,7 @@ async function deleteMember(id, name) {
   if (!confirm(`ยืนยันลบสมาชิก "${name}"?`)) return;
   try {
     await apiPost({ action:'deleteMember', id, email:adminEmail() });
+    clearMembersCache();
     showToast('ลบเรียบร้อยแล้ว', 'success');
     closeModal('member-detail-modal');
     adminSearchMembers();

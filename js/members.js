@@ -28,6 +28,29 @@ function renderRows(members) {
   scroll.style.display = '';
 }
 
+async function getCachedMembers() {
+  const cached = sessionStorage.getItem('members_data');
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      // Cache for 30 minutes
+      if (parsed.timestamp && (Date.now() - parsed.timestamp < 30 * 60 * 1000)) {
+        return parsed.members;
+      }
+    } catch(e) {
+      sessionStorage.removeItem('members_data');
+    }
+  }
+  
+  const data = await API.searchMembers('', '', '', 1, 9999);
+  const members = data.members || [];
+  sessionStorage.setItem('members_data', JSON.stringify({
+    members: members,
+    timestamp: Date.now()
+  }));
+  return members;
+}
+
 async function doSearch() {
   const query = document.getElementById('s-name').value.trim();
   const gen   = document.getElementById('s-gen').value;
@@ -36,10 +59,22 @@ async function doSearch() {
   document.getElementById('member-scroll').style.display = 'none';
   document.getElementById('member-empty').style.display  = 'none';
   try {
-    const data = await API.searchMembers(query, gen, type, 1, 9999);
-    const total = data.total || 0;
-    document.getElementById('result-count').textContent = `พบ ${total.toLocaleString()} รายการ`;
-    renderRows(data.members);
+    const allMembers = await getCachedMembers();
+    
+    // กรองข้อมูลบนฝั่งเบราว์เซอร์ทันที (รวดเร็วมาก)
+    const filtered = allMembers.filter(m => {
+      if (query) {
+        const queryLower = query.toLowerCase();
+        const s = [m.rank, m.fname, m.lname, m.id].filter(Boolean).join(' ').toLowerCase();
+        if (s.indexOf(queryLower) < 0) return false;
+      }
+      if (gen && String(m.gen).trim() !== gen) return false;
+      if (type && String(m.type).trim() !== type) return false;
+      return true;
+    });
+
+    document.getElementById('result-count').textContent = `พบ ${filtered.length.toLocaleString()} รายการ`;
+    renderRows(filtered);
   } catch(e) {
     document.getElementById('member-loading').style.display = 'none';
     document.getElementById('member-empty').style.display  = '';
